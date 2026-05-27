@@ -139,13 +139,11 @@ def apply_dashboard_style():
             padding-top: 2px !important; 
         }}
 
-        /* 지정한 key를 가진 버튼 컴포넌트 투명화 오버레이 처리 (기존 유지) */
-        div[data-element-textbox="click_all"] button,
-        div[data-element-textbox="click_done"] button,
-        div[data-element-textbox="click_pending"] button,
-        button[key="click_all"], 
-        button[key="click_done"], 
-        button[key="click_pending"] {{
+        /* 지정한 key를 가진 버튼 컴포넌트 투명화 오버레이 처리 */
+        /* button[key="..."] 선택자 앞에 .main(메인화면 영역)을 붙여 사이드바 침범을 원천 차단합니다 */
+        .main button[key="click_all"], 
+        .main button[key="click_done"], 
+        .main button[key="click_pending"] {{
             position: absolute !important;
             width: 100% !important;
             height: 140px !important; 
