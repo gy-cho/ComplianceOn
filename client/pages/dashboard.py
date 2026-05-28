@@ -1,6 +1,6 @@
 import streamlit as st
 from datetime import datetime
-from api_utils import fetch_data_from_server, add_new_user, delete_users
+from api_utils import fetch_log_items, add_new_user, delete_users, fetch_compliance_items
 from styles import KB_YELLOW, apply_dashboard_style
 from common.toast import show_toast
 
@@ -41,8 +41,31 @@ def show_dashboard_page():
         if st.button("직원추가", type="primary", use_container_width=True):
             show_add_user_dialog()
 
+
+    # --------------------------------------------------------------------------------
+    # [박스 1]: ■ 준법 항목 선택 영역
+    # --------------------------------------------------------------------------------
+    with st.container():
+        st.markdown('<div class="card-content-v2">', unsafe_allow_html=True)
+        st.markdown('<div class="box-section-title">■ 준법 항목 선택</div>', unsafe_allow_html=True)
+        
+        # API 호출하여 실시간 DB 목록 조회
+        status_code, task_items = fetch_compliance_items()
+        
+        # 정상적으로 데이터를 가져오지 못했거나 리스트가 비어있을 경우 방어 코드
+        if status_code != 200 or not task_items:
+            task_items = ["등록된 준법 항목이 없습니다."]
+        
+        # 준법 항목 셀렉트 박스 (하드코딩 배열 대신 API 결과 리스트 주입)
+        compliance_item = st.selectbox(
+            "준법 항목 선택",
+            task_items,
+            label_visibility="collapsed"
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+
     # 💡 [API 변경 대응] 새로 만들어진 API 구조를 기존 화면용 컬럼으로 이식
-    df = fetch_data_from_server()
+    df = fetch_log_items(compliance_item)
     
     if not df.empty:
         # 기존 코드의 변수 연산 정합성 유지 ("동의여부", "동의일시" 명칭 그대로 매핑)
@@ -54,21 +77,6 @@ def show_dashboard_page():
 
         if "metric_filter" not in st.session_state:
             st.session_state.metric_filter = "전체"
-
-        # --------------------------------------------------------------------------------
-        # [박스 1]: ■ 준법 항목 선택 영역
-        # --------------------------------------------------------------------------------
-        with st.container():
-            st.markdown('<div class="card-content-v2">', unsafe_allow_html=True)
-            st.markdown('<div class="box-section-title">■ 준법 항목 선택</div>', unsafe_allow_html=True)
-            
-            # 준법 항목 셀렉트 박스
-            compliance_item = st.selectbox(
-                "준법 항목 선택",
-                ["5월 정기 보안 자가점검 (타입: 자가점검)", "4월 정보보호 서약서 제출"],
-                label_visibility="collapsed"
-            )
-            st.markdown('</div>', unsafe_allow_html=True)
 
         # --------------------------------------------------------------------------------
         # [박스 2]: [대시보드 통계] 영역

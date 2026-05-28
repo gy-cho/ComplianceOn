@@ -65,7 +65,6 @@ CREATE TABLE "compliance_logs" (
   "task_id" int NOT NULL,
   "user_id" varchar(50) NOT NULL,
   "client_ip" varchar(45) NOT NULL,
-  "is_completed" boolean NOT NULL DEFAULT false,
   "answers" jsonb NOT NULL,
   "completed_at" timestamp NOT NULL DEFAULT (now()),
   

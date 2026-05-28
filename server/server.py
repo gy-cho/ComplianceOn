@@ -1,10 +1,8 @@
-import os
-import json
-from fastapi import FastAPI, status
-from pydantic import BaseModel, Field
+from fastapi import FastAPI, status, Query
+from pydantic import BaseModel
 from datetime import datetime
 from fastapi.responses import JSONResponse
-from typing import List, Optional, Any
+from typing import List, Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor, Json
 
@@ -131,45 +129,70 @@ async def submit_compliance(data: SubmitComplianceRequest):
 
 # 📌 2. 전체 서약/수행 완료 로그 조회 API (관리자 뷰어용)
 @app.get("/get-all-logs")
-async def get_all_logs():
+async def get_all_logs(task_title: str = Query(None)):
+    conn = None
+    cursor = None
     try:
         conn = get_pg_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
-        # 어떤 사원이 어떤 제목의 서약을 언제 마쳤는지 관계형 조인(JOIN) 쿼리 수행
-        query = """
-            SELECT 
-                l.log_id,
-                t.title AS task_title,
-                t.task_type,
-                u.user_id,
-                u.user_name,
-                l.client_ip,
-                l.is_completed,
-                l.answers,
-                l.completed_at
-            FROM compliance_logs l
-            JOIN compliance_tasks t ON l.task_id = t.task_id
-            JOIN users u ON l.user_id = u.user_id
-            ORDER BY l.completed_at DESC
-        """
-        cursor.execute(query)
+        if not task_title or task_title == "등록된 준법 항목이 없습니다.":
+            query = """
+                SELECT 
+                    user_id, user_name, ip_address AS client_ip,
+                    false AS is_completed, NULL AS completed_at, '선택 없음' AS task_title
+                FROM users WHERE is_active = true ORDER BY user_name ASC
+            """
+            cursor.execute(query)
+        else:
+            # 💡 [핵심 해결 포인트]
+            # CASE 문을 통해 항목의 주기(recurrence_type)에 따라 현재 시간(now())과의 차이를 계산합니다.
+            # - DAILY: 완료일이 1일 이내여야 인정
+            # - WEEKLY: 완료일이 7일 이내여야 인정
+            # - MONTHLY: 완료일이 30일 이내여야 인정
+            # 이 유효기간을 벗어난 과거 완료 데이터는 유저에게 재동의를 받아야 하므로 false로 판정합니다.
+            query = """
+                SELECT 
+                    u.user_id,
+                    u.user_name,
+                    COALESCE(l.client_ip, u.ip_address) AS client_ip,
+                    CASE 
+                        WHEN l.is_completed = true AND t.recurrence_type = 'DAILY' AND l.completed_at >= now() - INTERVAL '1 day' THEN true
+                        WHEN l.is_completed = true AND t.recurrence_type = 'WEEKLY' AND l.completed_at >= now() - INTERVAL '7 days' THEN true
+                        WHEN l.is_completed = true AND t.recurrence_type = 'MONTHLY' AND l.completed_at >= now() - INTERVAL '30 days' THEN true
+                        WHEN l.is_completed = true AND t.recurrence_type = 'ONCE' THEN true -- 단발성은 언제 했든 완료 인정
+                        ELSE false
+                    END AS is_completed,
+                    l.completed_at,
+                    t.title AS task_title
+                FROM users u
+                CROSS JOIN (
+                    SELECT task_id, title, recurrence_type FROM compliance_tasks WHERE title = %s
+                ) t
+                LEFT JOIN compliance_logs l ON u.user_id = l.user_id AND t.task_id = l.task_id
+                WHERE u.is_active = true
+                ORDER BY u.user_name ASC
+            """
+            cursor.execute(query, (task_title,))
+            
         rows = cursor.fetchall()
-        
         cursor.close()
         conn.close()
         
-        # datetime 및 jsonb 데이터를 깨지지 않게 보정
         result = []
         for row in rows:
             row_dict = dict(row)
             if row_dict["completed_at"]:
                 row_dict["completed_at"] = row_dict["completed_at"].strftime("%Y-%m-%d %H:%M:%S")
-            # row_dict["answers"]는 psycopg2가 내장 dict/list로 자동 파싱해 주므로 그대로 리턴 가능합니다.
+            else:
+                row_dict["completed_at"] = "-"
             result.append(row_dict)
             
         return result
+        
     except Exception as e:
+        if cursor: cursor.close()
+        if conn: conn.close()
         return {"error": str(e)}
 
 
@@ -248,5 +271,50 @@ async def delete_users(data: UserDeleteRequest):
             content={"status": "error", "message": str(e)}
         )
     finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+
+# --- 5. 준법 항목 목록 조회 API ---
+@app.get("/get-compliance-items")
+async def get_compliance_items():
+    conn = None
+    cursor = None
+    try:
+        # 1. 기존 삭제 API와 동일한 방식으로 커넥션 및 커서 생성
+        conn = get_pg_connection()
+        cursor = conn.cursor()
+        
+        # 2. 약속된 마스터 테이블(compliance_tasks)에서 제목(title) 조회
+        # 최근 등록된 항목이 상단에 나오도록 task_id 기준 내림차순 정렬을 추가했습니다.
+        query = 'SELECT title FROM "compliance_tasks" ORDER BY "task_id" DESC'
+        cursor.execute(query)
+        
+        # 3. 데이터 패치 및 가공
+        rows = cursor.fetchall()
+        
+        # 데이터가 없을 경우 빈 배열 반환
+        if not rows:
+            return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content=[]
+            )
+            
+        # 튜플 형태의 결과를 깔끔하게 문자열 리스트로 변환
+        compliance_list = [row[0] for row in rows]
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=compliance_list
+        )
+        
+    except Exception as e:
+        # 기존 예외 처리 구조와 동일하게 맞춤
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"status": "error", "message": str(e)}
+        )
+    finally:
+        # 커넥션 누수 방지를 위한 자원 반납 구조 통일
         if cursor: cursor.close()
         if conn: conn.close()
