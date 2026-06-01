@@ -3,13 +3,12 @@ import requests
 import streamlit as st
 
 # 백엔드 서버 베이스 URL (환경에 맞게 수정)
-BASE_URL = "http://127.0.0.1:8000"
 
 import pandas as pd
 import requests
 import streamlit as st
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "http://localhost:8080"
 def fetch_log_items(task_title: str = None):
     """
     서버로부터 로그 데이터를 가져와서, 기존 대시보드 UI가 기대하는
@@ -17,38 +16,46 @@ def fetch_log_items(task_title: str = None):
     """
     url = f"{BASE_URL}/get-all-logs"
     
-    # 💡 [변경 포인트] 선택된 준법 항목 제목이 인자로 들어오면 params 딕셔너리에 매핑합니다.
     params = {}
     if task_title:
         params["task_title"] = task_title
 
     try:
-        # 💡 GET 요청 시 params 인자를 추가하여 서버로 파라미터를 넘겨줍니다.
         response = requests.get(url, params=params, timeout=5)
         
         if response.status_code == 200:
             data = response.json()
             
-            # 데이터가 없을 때 기존 대시보드가 에러 나지 않도록 기본 컬럼 정의
-            if not data:
+            # 💡 [방어 코드] 서버에서 에러 메시지 딕셔너리({"error": "..."})를 리턴했거나 데이터가 비어있을 때 처리
+            if not data or (isinstance(data, dict) and "error" in data):
+                if isinstance(data, dict) and "error" in data:
+                    st.error(f"서버 내부 오류: {data['error']}")
                 return pd.DataFrame(columns=["이름", "사번", "IP", "동의여부", "동의일시"])
             
             df = pd.DataFrame(data)
             
-            # 💡 [핵심 해결 포인트] 새로운 백엔드 응답 키값을 기존 대시보드 UI 컬럼명으로 1:1 매핑
-            df = df[["user_name", "user_id", "client_ip", "is_completed", "completed_at"]]
+            # 💡 [안정성 보장] 혹시 모를 키값 누락에 대비해 안전하게 필요한 컬럼만 추출
+            expected_keys = ["user_name", "user_id", "client_ip", "is_completed", "completed_at"]
+            for key in expected_keys:
+                if key not in df.columns:
+                    df[key] = None if key != "is_completed" else False
+            
+            # 1:1 매핑 및 컬럼명 치환
+            df = df[expected_keys]
             df.columns = ["이름", "사번", "IP", "동의여부", "동의일시"]
             
-            # 기존 대시보드가 기대하는 완료/미완료 문자열 포맷으로 변환
-            df["동의여부"] = df["동의여부"].map({True: '완료', False: '미완료'})
+            # 백엔드에서 연산된 true/false 불리언 값을 대시보드용 한글 문자열로 안전하게 변환
+            df["동의여부"] = df["동의여부"].map({True: '완료', False: '미완료'}).fillna('미완료')
             
             return df[["이름", "사번", "IP", "동의여부", "동의일시"]]
         else:
-            st.error("서버에서 데이터를 가져오지 못했습니다.")
-            return pd.DataFrame()
+            st.error(f"서버 응답 실패 (Status Code: {response.status_code})")
+            return pd.DataFrame(columns=["이름", "사번", "IP", "동의여부", "동의일시"])
+            
     except Exception as e:
         st.error(f"서버 연결 오류: {e}")
-        return pd.DataFrame()
+        return pd.DataFrame(columns=["이름", "사번", "IP", "동의여부", "동의일시"])
+    
     
 
 def add_new_user(user_id, user_name, ip_address):

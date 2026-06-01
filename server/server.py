@@ -145,22 +145,20 @@ async def get_all_logs(task_title: str = Query(None)):
             """
             cursor.execute(query)
         else:
-            # 💡 [핵심 해결 포인트]
-            # CASE 문을 통해 항목의 주기(recurrence_type)에 따라 현재 시간(now())과의 차이를 계산합니다.
-            # - DAILY: 완료일이 1일 이내여야 인정
-            # - WEEKLY: 완료일이 7일 이내여야 인정
-            # - MONTHLY: 완료일이 30일 이내여야 인정
-            # 이 유효기간을 벗어난 과거 완료 데이터는 유저에게 재동의를 받아야 하므로 false로 판정합니다.
+            # 💡 [핵심 해결 포인트] 
+            # 1. 쿼리문 조건식에서 l.is_completed = true 조건을 전부 제거했습니다.
+            # 2. 오직 l.completed_at 날짜가 존재(NOT NULL)하면서 주기 기준을 만족하는지만 확인합니다.
+            # 3. 결과 컬럼명(Alias)은 프론트엔드 파이프라인 호환성을 위해 AS is_completed로 유지합니다.
             query = """
                 SELECT 
                     u.user_id,
                     u.user_name,
                     COALESCE(l.client_ip, u.ip_address) AS client_ip,
                     CASE 
-                        WHEN l.is_completed = true AND t.recurrence_type = 'DAILY' AND l.completed_at >= now() - INTERVAL '1 day' THEN true
-                        WHEN l.is_completed = true AND t.recurrence_type = 'WEEKLY' AND l.completed_at >= now() - INTERVAL '7 days' THEN true
-                        WHEN l.is_completed = true AND t.recurrence_type = 'MONTHLY' AND l.completed_at >= now() - INTERVAL '30 days' THEN true
-                        WHEN l.is_completed = true AND t.recurrence_type = 'ONCE' THEN true -- 단발성은 언제 했든 완료 인정
+                        WHEN t.recurrence_type = 'DAILY'   AND l.completed_at >= now() - INTERVAL '1 day'   THEN true
+                        WHEN t.recurrence_type = 'WEEKLY'  AND l.completed_at >= now() - INTERVAL '7 days'  THEN true
+                        WHEN t.recurrence_type = 'MONTHLY' AND l.completed_at >= now() - INTERVAL '30 days' THEN true
+                        WHEN t.recurrence_type = 'ONCE'    AND l.completed_at IS NOT NULL                    THEN true
                         ELSE false
                     END AS is_completed,
                     l.completed_at,
@@ -179,6 +177,7 @@ async def get_all_logs(task_title: str = Query(None)):
         cursor.close()
         conn.close()
         
+        # 날짜 포맷 깨짐 방지 가공 파이프라인
         result = []
         for row in rows:
             row_dict = dict(row)

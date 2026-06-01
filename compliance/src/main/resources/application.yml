@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: '1234'
+    driver-class-name: org.postgresql.Driver
+
+logging:
+  level:
+    root: info                    # 📌 프로젝트 전체의 기본 로그를 터미널에 출력 (info 레벨)
+    com.kbds.compliance: debug    # 📌 우리가 짠 코드 내부의 SQL 쿼리와 로그는 더 상세히(debug) 출력
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n" # 콘솔 포맷 지정

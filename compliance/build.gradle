@@ -1,0 +1,48 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.0.6'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.kbds'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+    // 📌 1. 웹 & REST API 개발을 위한 핵심 라이브러리 (톰캣 및 ObjectMapper 내장)
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // 📌 2. 로우 SQL 실행 및 NamedParameterJdbcTemplate 사용을 위한 JDBC
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+
+    // 📌 3. 데이터베이스 연동을 위한 PostgreSQL 드라이버
+    implementation 'org.postgresql:postgresql'
+
+    // 📌 4. Getter/Setter 등 보일러플레이트 코드 제거용 Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // 📌 5. 테스트 환경을 위한 기본 의존성
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    
+    // 테스트 환경에서도 Lombok을 쓰기 위한 설정
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // 📌 Spring Boot용 Swagger UI (FastAPI의 /docs 같은 화면을 만들어 줍니다)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
