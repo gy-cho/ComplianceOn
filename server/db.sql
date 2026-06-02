@@ -1,94 +1,177 @@
 -- ======================================================================
--- 1. 마스터 테이블 생성 (users, compliance_tasks)
+-- 1. 마스터 테이블 생성 (TB_COMP_QSTN_POOL, TB_EMP, TB_COMP_TASK)
 -- ======================================================================
 
--- 준법 관리 대상 사용자 마스터 테이블
-CREATE TABLE "users" (
-  "user_id" varchar(50) PRIMARY KEY,
-  "user_name" varchar(50) NOT NULL,
-  "ip_address" varchar(45) NOT NULL,
-  "is_active" boolean NOT NULL DEFAULT true,
-  "created_at" timestamp NOT NULL DEFAULT (now())
+-- 준법질문POOL
+CREATE TABLE "TB_COMP_QSTN_POOL" (
+  "QSTN_CD" varchar(4) PRIMARY KEY,
+  "QSTN_NM" varchar(200),
+  "QSTN_TYPE" varchar(3),
+  "QSTN_CN" varchar(300) NOT NULL,
+  "QSTN_STD_ANS_YN" varchar(1),
+  "DEL_YN" varchar(20) ,
+  "REG_EMP_NO" varchar(10) ,
+  "REG_DTM" timestamp DEFAULT (now()),
+  "CHG_EMP_NO" varchar(10) ,
+  "CHG_DTM" timestamp
 );
 
-COMMENT ON TABLE "users" IS '준법 관리 대상 사용자 마스터 테이블';
-COMMENT ON COLUMN "users"."user_id" IS '사원번호 (PK)';
-COMMENT ON COLUMN "users"."user_name" IS '사원이름';
+COMMENT ON TABLE "TB_COMP_QSTN_POOL" IS '준법질문POOL';
+COMMENT ON COLUMN "TB_COMP_QSTN_POOL"."QSTN_CD" IS '질문코드';
+COMMENT ON COLUMN "TB_COMP_QSTN_POOL"."QSTN_NM" IS '질문명';
+COMMENT ON COLUMN "TB_COMP_QSTN_POOL"."QSTN_TYPE" IS '질문종류';
+COMMENT ON COLUMN "TB_COMP_QSTN_POOL"."QSTN_CN" IS '질문내용';
+COMMENT ON COLUMN "TB_COMP_QSTN_POOL"."QSTN_STD_ANS_YN" IS '질문별표준답변';
+COMMENT ON COLUMN "TB_COMP_QSTN_POOL"."DEL_YN" IS '삭제여부';
+COMMENT ON COLUMN "TB_COMP_QSTN_POOL"."REG_EMP_NO" IS '최초등록자';
+COMMENT ON COLUMN "TB_COMP_QSTN_POOL"."REG_DTM" IS '최초등록일시';
+COMMENT ON COLUMN "TB_COMP_QSTN_POOL"."CHG_EMP_NO" IS '최종수정자';
+COMMENT ON COLUMN "TB_COMP_QSTN_POOL"."CHG_DTM" IS '최종수정일시';
+
+
+-- 준법 관리 대상 사용자 마스터 테이블
+CREATE TABLE "TB_EMP" (
+  "EMP_NO" varchar(10) PRIMARY KEY,
+  "EMP_NM" varchar(50) NOT NULL,
+  "IP" varchar(20) NOT NULL,
+  "DEL_YN" varchar(20) ,
+  "REG_EMP_NO" varchar(10) ,
+  "REG_DTM" timestamp DEFAULT (now()),
+  "CHG_EMP_NO" varchar(10) ,
+  "CHG_DTM" timestamp
+);
+
+COMMENT ON TABLE "TB_EMP" IS '준법 관리 대상 사원 마스터 테이블';
+COMMENT ON COLUMN "TB_EMP"."EMP_NO" IS '사원번호';
+COMMENT ON COLUMN "TB_EMP"."EMP_NM" IS '사원명';
+COMMENT ON COLUMN "TB_EMP"."IP" IS 'IP';
+COMMENT ON COLUMN "TB_EMP"."DEL_YN" IS '삭제여부';
+COMMENT ON COLUMN "TB_EMP"."REG_EMP_NO" IS '최초등록자';
+COMMENT ON COLUMN "TB_EMP"."REG_DTM" IS '최초등록일시';
+COMMENT ON COLUMN "TB_EMP"."CHG_EMP_NO" IS '최종수정자';
+COMMENT ON COLUMN "TB_EMP"."CHG_DTM" IS '최종수정일시';
 
 
 -- 준법 항목 마스터 테이블
-CREATE TABLE "compliance_tasks" (
-  "task_id" SERIAL PRIMARY KEY,
-  "title" varchar(200) NOT NULL,
-  "task_type" varchar(20) NOT NULL,
-  "content" jsonb,
-  "recurrence_type" varchar(20) NOT NULL DEFAULT 'ONCE',
-  "is_published" boolean NOT NULL DEFAULT false,
-  "start_date" timestamp NOT NULL,
-  "end_date" timestamp NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (now()),
-  
-  -- 💡 유효성 검증: ETHICS 타입일 때 content 내부에 반드시 type 필드가 포함되도록 제한
-  CONSTRAINT "chk_ethics_content_format" CHECK (
-    (task_type = 'ETHICS' AND content IS NOT NULL AND content ? 'type') OR 
-    (task_type != 'ETHICS')
-  )
+CREATE TABLE "TB_COMP_TASK" (
+  "TASK_ID" SERIAL PRIMARY KEY,
+  "TASK_NM" varchar(200) NOT NULL,
+  "TASK_TYPE" varchar(20),
+  "TASK_CN" varchar(300),
+  "RCRN_YN" varchar(1),
+  "RCRN_CYC_CD" varchar(2),
+  "PBLS_YN" varchar(1),
+  "DEL_YN" varchar(20) ,
+  "REG_EMP_NO" varchar(10) ,
+  "REG_DTM" timestamp DEFAULT now(),
+  "CHG_EMP_NO" varchar(10) ,
+  "CHG_DTM" timestamp
 );
 
-COMMENT ON TABLE "compliance_tasks" IS '준법 항목 마스터 테이블';
-COMMENT ON COLUMN "compliance_tasks"."task_id" IS '준법 항목 일련번호 (PK)';
-COMMENT ON COLUMN "compliance_tasks"."title" IS '준법 공지 제목';
-COMMENT ON COLUMN "compliance_tasks"."task_type" IS '준법 타입 (ETHICS, SELF_CHECK)';
-COMMENT ON COLUMN "compliance_tasks"."content" IS '[API 약속] ETHICS 본문 데이터 (JSONB) - TEXT형: {"type": "TEXT", "body": "..."}, IMAGE형: {"type": "IMAGE", "url": "..."}';
-
+COMMENT ON TABLE "TB_COMP_TASK" IS '준법 항목 마스터 테이블';
+COMMENT ON COLUMN "TB_COMP_TASK"."TASK_ID" IS '타스크아이디';
+COMMENT ON COLUMN "TB_COMP_TASK"."TASK_NM" IS '타스크명';
+COMMENT ON COLUMN "TB_COMP_TASK"."TASK_TYPE" IS '타스크종류';
+COMMENT ON COLUMN "TB_COMP_TASK"."TASK_CN" IS '타스크내용';
+COMMENT ON COLUMN "TB_COMP_TASK"."RCRN_YN" IS '반복여부';
+COMMENT ON COLUMN "TB_COMP_TASK"."RCRN_CYC_CD" IS '반복주기';
+COMMENT ON COLUMN "TB_COMP_TASK"."PBLS_YN" IS '게시여부';
+COMMENT ON COLUMN "TB_COMP_TASK"."DEL_YN" IS '삭제여부';
+COMMENT ON COLUMN "TB_COMP_TASK"."REG_EMP_NO" IS '최초등록자';
+COMMENT ON COLUMN "TB_COMP_TASK"."REG_DTM" IS '최초등록일시';
+COMMENT ON COLUMN "TB_COMP_TASK"."CHG_EMP_NO" IS '최종수정자';
+COMMENT ON COLUMN "TB_COMP_TASK"."CHG_DTM" IS '최종수정일시';
 
 -- ======================================================================
--- 2. 자식 테이블 및 로그 테이블 생성 (compliance_questions, compliance_logs)
+-- 2. 자식 테이블 및 답변 테이블 생성 (TB_COMP_TASK_APP_DT, TB_COMP_TASK_QSTN, TB_COMP_EMP_ANS)
 -- ======================================================================
 
--- 자가점검 유형의 상세 문항 테이블
-CREATE TABLE "compliance_questions" (
-  "question_id" SERIAL PRIMARY KEY,
-  "task_id" int NOT NULL,
-  "question_text" text NOT NULL,
-  "sort_order" int NOT NULL DEFAULT 1,
-  "is_deleted" boolean NOT NULL DEFAULT false,
-  "created_at" timestamp NOT NULL DEFAULT (now())
+-- TASK 적용일
+CREATE TABLE "TB_COMP_TASK_APP_DT" (
+  "TASK_ID" int,
+  "APP_SEQ" int,
+  "TASK_APP_DT" DATE NOT NULL,
+  "DEL_YN" varchar(20) ,
+  "REG_EMP_NO" varchar(10) ,
+  "REG_DTM" timestamp DEFAULT now(),
+  "CHG_EMP_NO" varchar(10) ,
+  "CHG_DTM" timestamp,
+
+  PRIMARY KEY ("TASK_ID", "APP_SEQ")
 );
 
-COMMENT ON TABLE "compliance_questions" IS '자가점검 유형의 상세 문항 테이블';
+COMMENT ON TABLE "TB_COMP_TASK_APP_DT" IS 'TASK 적용일';
+COMMENT ON COLUMN "TB_COMP_TASK_APP_DT"."TASK_ID" IS '타스크아이디';
+COMMENT ON COLUMN "TB_COMP_TASK_APP_DT"."APP_SEQ" IS '순번';
+COMMENT ON COLUMN "TB_COMP_TASK_APP_DT"."TASK_APP_DT" IS '타스크적용일';
+COMMENT ON COLUMN "TB_COMP_TASK_APP_DT"."DEL_YN" IS '삭제여부';
+COMMENT ON COLUMN "TB_COMP_TASK_APP_DT"."REG_EMP_NO" IS '최초등록자';
+COMMENT ON COLUMN "TB_COMP_TASK_APP_DT"."REG_DTM" IS '최초등록일시';
+COMMENT ON COLUMN "TB_COMP_TASK_APP_DT"."CHG_EMP_NO" IS '최종수정자';
+COMMENT ON COLUMN "TB_COMP_TASK_APP_DT"."CHG_DTM" IS '최종수정일시';
 
 
--- 사용자별 준법 프로그램 수행 마스터 로그
-CREATE TABLE "compliance_logs" (
-  "log_id" SERIAL PRIMARY KEY,
-  "task_id" int NOT NULL,
-  "user_id" varchar(50) NOT NULL,
-  "client_ip" varchar(45) NOT NULL,
-  "answers" jsonb NOT NULL,
-  "completed_at" timestamp NOT NULL DEFAULT (now()),
+-- TASK별 질문
+CREATE TABLE "TB_COMP_TASK_QSTN" (
+  "TASK_ID" int,
+  "QSTN_CD" varchar(4),
+  "DEL_YN" varchar(20) ,
+  "REG_EMP_NO" varchar(10) ,
+  "REG_DTM" timestamp DEFAULT now(),
+  "CHG_EMP_NO" varchar(10) ,
+  "CHG_DTM" timestamp,
   
-  -- 💡 유효성 검증: answers 저장 시 반드시 JSON 배열([]) 형태여야 함을 보장
-  CONSTRAINT "chk_answers_is_array" CHECK (jsonb_typeof(answers) = 'array')
+  PRIMARY KEY ("TASK_ID", "QSTN_CD")
 );
 
-COMMENT ON TABLE "compliance_logs" IS '사용자별 준법 프로그램 수행 마스터 로그';
-COMMENT ON COLUMN "compliance_logs"."answers" IS '[API 약속] 사용자 응답 데이터 배열 (JSONB) - [{"q_id": 101, "txt": "질문", "ans": "Y/AGREE"}]';
+COMMENT ON TABLE "TB_COMP_TASK_QSTN" IS 'TASK별 질문';
+COMMENT ON COLUMN "TB_COMP_TASK_QSTN"."TASK_ID" IS '타스크아이디';
+COMMENT ON COLUMN "TB_COMP_TASK_QSTN"."QSTN_CD" IS '질문코드';
+COMMENT ON COLUMN "TB_COMP_TASK_QSTN"."DEL_YN" IS '삭제여부';
+COMMENT ON COLUMN "TB_COMP_TASK_QSTN"."REG_EMP_NO" IS '최초등록자';
+COMMENT ON COLUMN "TB_COMP_TASK_QSTN"."REG_DTM" IS '최초등록일시';
+COMMENT ON COLUMN "TB_COMP_TASK_QSTN"."CHG_EMP_NO" IS '최종수정자';
+COMMENT ON COLUMN "TB_COMP_TASK_QSTN"."CHG_DTM" IS '최종수정일시';
+
+
+-- 직원별답변
+CREATE TABLE "TB_COMP_EMP_ANS" (
+  "EMP_NO" varchar(10) ,
+  "TASK_ID" int ,
+  "APP_SEQ" int ,
+  "QSTN_CD" varchar(4) ,
+  "ANS_DT" timestamp NOT NULL DEFAULT now(),
+  "EMP_ANS_YN" varchar(1),
+  "EMP_ANS_CN" varchar(200),
+  "DEL_YN" varchar(20) ,
+  "REG_EMP_NO" varchar(10) ,
+  "REG_DTM" timestamp DEFAULT now(),
+  "CHG_EMP_NO" varchar(10) ,
+  "CHG_DTM" timestamp,
+  
+  PRIMARY KEY ("EMP_NO", "TASK_ID", "APP_SEQ", "QSTN_CD")
+);
+
+COMMENT ON TABLE "TB_COMP_EMP_ANS" IS '직원별답변';
+COMMENT ON COLUMN "TB_COMP_EMP_ANS"."EMP_NO" IS '사원번호';
+COMMENT ON COLUMN "TB_COMP_EMP_ANS"."TASK_ID" IS '타스크아이디';
+COMMENT ON COLUMN "TB_COMP_EMP_ANS"."APP_SEQ" IS '적용순번';
+COMMENT ON COLUMN "TB_COMP_EMP_ANS"."QSTN_CD" IS '질문코드';
+COMMENT ON COLUMN "TB_COMP_EMP_ANS"."ANS_DT" IS '답변일시';
+COMMENT ON COLUMN "TB_COMP_EMP_ANS"."EMP_ANS_YN" IS '질문별답변';
+COMMENT ON COLUMN "TB_COMP_EMP_ANS"."EMP_ANS_CN" IS '질문별답변내용';
+COMMENT ON COLUMN "TB_COMP_EMP_ANS"."DEL_YN" IS '삭제여부';
+COMMENT ON COLUMN "TB_COMP_EMP_ANS"."REG_EMP_NO" IS '최초등록자';
+COMMENT ON COLUMN "TB_COMP_EMP_ANS"."REG_DTM" IS '최초등록일시';
+COMMENT ON COLUMN "TB_COMP_EMP_ANS"."CHG_EMP_NO" IS '최종수정자';
+COMMENT ON COLUMN "TB_COMP_EMP_ANS"."CHG_DTM" IS '최종수정일시';
 
 
 -- ======================================================================
 -- 3. 인덱스(Indexes) 생성
 -- ======================================================================
 
-CREATE INDEX "idx_questions_task_order" ON "compliance_questions" ("task_id", "sort_order");
-CREATE INDEX "idx_logs_user_task" ON "compliance_logs" ("user_id", "task_id");
-CREATE INDEX "idx_logs_completed_at" ON "compliance_logs" ("completed_at");
+CREATE INDEX "IDX_TB_COMP_TASK_APP_DT_1" ON "TB_COMP_TASK_APP_DT" ("TASK_APP_DT");
 
 
--- ======================================================================
--- 4. 외래키(Foreign Keys) 제약조건 설정
--- ======================================================================
 
-ALTER TABLE "compliance_questions" ADD FOREIGN KEY ("task_id") REFERENCES "compliance_tasks" ("task_id") ON DELETE CASCADE;
-ALTER TABLE "compliance_logs" ADD FOREIGN KEY ("task_id") REFERENCES "compliance_tasks" ("task_id");
-ALTER TABLE "compliance_logs" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id");
