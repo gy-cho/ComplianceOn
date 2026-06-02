@@ -6,7 +6,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AnswerItem {
-    private Integer q_id; // Optional 대신 Null 허용 객체 타입 사용
-    private String txt;
-    private String ans;
+    private String qstn_cd;    // TB_COMP_QSTN_POOL 코드 참조
+    private String emp_ans_yn; // 완료 여부 ('Y', 'N')
 }

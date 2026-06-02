@@ -159,3 +159,84 @@ def apply_dashboard_style():
         }}
         </style>
     """, unsafe_allow_html=True)
+
+
+
+def apply_task_management_style():
+    st.markdown(f"""
+        <style>
+        /* 1. 전체 통합 배경색 */
+        [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
+            background-color: #EEF0F5 !important;
+        }}
+
+        /* 2. 대시보드 폰트/제목 가이드 동기화 */
+        .page-title {{
+            font-size: 26px;
+            font-weight: 700;
+            color: #1F2937;
+            margin-bottom: 25px;
+        }}
+        
+        /* 대시보드 화면 전용 3단 분리형 카드 디자인 */
+        div[data-testid="stLayoutWrapper"]:has(> div .card-content-v2) {{
+            background-color: #ffffff !important;
+            border-radius: 14px !important;
+            border: 1px solid #E5E7EB !important;
+            padding: 20px 22px !important; 
+            margin-bottom: 12px !important; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.015);
+        }}
+
+        /* 분리형 가상 박스 타이틀 스타일 깔맞춤 */
+        .box-section-title {{
+            font-size: 1rem;
+            font-weight: 700;
+            color: #2D3748;
+            margin-bottom: 14px;
+            margin-top: -2px;
+        }}
+
+        /* 빈 더미 마크다운 요소 히든 블록 마스킹 */
+        .card-content-v2 {{
+            display: none;
+        }}
+        </style>
+    """, unsafe_allow_html=True)
+
+
+# =========================================================================
+# 🎨 스타일 통합 함수 (대시보드 마스터 가이드 동기화)
+# =========================================================================
+def apply_employee_style():
+    st.markdown(f"""
+        <style>
+        [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
+            background-color: #EEF0F5 !important;
+        }}
+        .page-title {{
+            font-size: 26px;
+            font-weight: 700;
+            color: #1F2937;
+            margin-bottom: 25px;
+        }}
+        div[data-testid="stLayoutWrapper"]:has(> div .card-content-v2) {{
+            background-color: #ffffff !important;
+            border-radius: 14px !important;
+            border: 1px solid #E5E7EB !important;
+            padding: 20px 22px !important; 
+            margin-bottom: 12px !important; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.015);
+        }}
+        .box-section-title {{
+            font-size: 1rem;
+            font-weight: 700;
+            color: #2D3748;
+            margin-bottom: 14px;
+            margin-top: -2px;
+        }}
+        .card-content-v2 {{
+            display: none;
+        }}
+        </style>
+    """, unsafe_allow_html=True)

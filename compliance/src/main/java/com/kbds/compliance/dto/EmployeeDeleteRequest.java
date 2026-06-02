@@ -6,6 +6,6 @@ import java.util.List;
 
 @Getter
 @Setter
-public class UserDeleteRequest {
-    private List<String> user_ids;
+public class EmployeeDeleteRequest {
+    private List<String> emp_nos;
 }

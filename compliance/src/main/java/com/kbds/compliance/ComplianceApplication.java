@@ -13,5 +13,5 @@ public class ComplianceApplication {
 }
 
 
-//.\gradlew.bat bootJar
+//./gradlew bootJar
 //java -jar compliance-0.0.1-SNAPSHOT.jar
