@@ -38,3 +38,7 @@ elif st.session_state.menu == "직원 관리":
 else:
     # 아직 구현되지 않은 페이지들은 기존 common_pages 함수 호출
     show_coming_soon(st.session_state.menu)
+
+
+
+# streamlit run admin.py   
