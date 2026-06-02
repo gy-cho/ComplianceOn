@@ -26,7 +26,7 @@ def show_coming_soon(menu_name):
     st.markdown(f"""
         <div class="coming-soon-card">
             {gif_html}
-            <div class="main-text">'{menu_name}' 페이지 준비중입니다.</div>
+            <div class="main-text">'{menu_name}' 페이지 준비중입니다.11</div>
             <div class="sub-text">
                 현재 페이지를 준비하고 있으니 조금만 기다려주세요.<br>
                 감사합니다.
