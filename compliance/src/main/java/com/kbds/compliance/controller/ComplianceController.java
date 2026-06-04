@@ -142,21 +142,26 @@ public class ComplianceController {
                         " ) "+
                         " SELECT TP1.task_id "+
                             " , TP1.task_nm "+
+                            " , TP1.APP_SEQ "+
+                            " , TP1.TASK_APP_DT "+
                             " , TP1.emp_nm "+
                             " , TP1.emp_no "+
                             " , TP1.ip  "+
-                            " , COALESCE(CEA.EMP_ANS_YN, 'N') AS emp_ans_yn  "+
-                            " , CEA.ANS_DT AS ans_dt  "+
+                            " , COALESCE(CTADEA.EMP_MAIN_ANS_YN, 'N') AS emp_main_ans_yn   "+
+                            " , CTADEA.ANS_DT AS ans_dt  "+
                         " FROM TMP1 TP1 "+
-                        " LEFT JOIN TB_COMP_EMP_ANS CEA "+
-                            " ON CEA.TASK_ID = TP1.TASK_ID "+
-                            " AND CEA.APP_SEQ = TP1.APP_SEQ "+
-                            " AND CEA.EMP_NO = TP1.EMP_NO "+
-                            " AND (CEA.DEL_YN = 'N' or CEA.DEL_YN is null ) ";
+                        " LEFT JOIN TB_COMP_TASK_APP_DT_EMP_ANS CTADEA "+
+                            " ON CTADEA.TASK_ID = TP1.TASK_ID "+
+                            " AND CTADEA.APP_SEQ = TP1.APP_SEQ "+
+                            " AND CTADEA.EMP_NO = TP1.EMP_NO "+
+                            " AND (CTADEA.DEL_YN = 'N' or CTADEA.DEL_YN is null ) ";
 
             } else {
-                // CROSS JOIN + LEFT JOIN 연산 결합을 통해 미완료자 리스트까지 누락없이 결합 추출
-                query = "WITH TMP1 AS (" +
+                params.addValue("taskId", taskId);
+                params.addValue("appSeq", appSeq);
+
+                if ( appSeq == 0 ) {
+                    query = "WITH TMP1 AS (" +
                             " SELECT TASK.TASK_ID AS task_id "+
                             "     , TASK.TASK_NM AS task_nm "+
                             "     , EMP.EMP_NM AS emp_nm "+
@@ -167,24 +172,59 @@ public class ComplianceController {
                             " FROM TB_COMP_TASK TASK "+
                             " , TB_COMP_TASK_APP_DT CTAD "+
                             " , TB_EMP EMP "+
-                            " WHERE TASK.TASK_ID = CTAD.TASK_ID "+
+                            " WHERE TASK.TASK_ID = :taskId "+
+                            " AND TASK.TASK_ID = CTAD.TASK_ID "+
                             " ORDER BY TASK.TASK_ID, CTAD.TASK_APP_DT, EMP.EMP_NO "+
                         " ) "+
                         " SELECT TP1.task_id "+
                             " , TP1.task_nm "+
+                            " , TP1.APP_SEQ "+
+                            " , TP1.TASK_APP_DT "+
                             " , TP1.emp_nm "+
                             " , TP1.emp_no "+
                             " , TP1.ip  "+
-                            " , COALESCE(CEA.EMP_ANS_YN, 'N') AS emp_ans_yn  "+
-                            " , CEA.ANS_DT AS ans_dt  "+
+                            " , COALESCE(CTADEA.EMP_MAIN_ANS_YN, 'N') AS emp_main_ans_yn   "+
+                            " , CTADEA.ANS_DT AS ans_dt  "+
                         " FROM TMP1 TP1 "+
-                        " LEFT JOIN TB_COMP_EMP_ANS CEA "+
-                            " ON CEA.TASK_ID = TP1.TASK_ID "+
-                            " AND CEA.APP_SEQ = TP1.APP_SEQ "+
-                            " AND CEA.EMP_NO = TP1.EMP_NO "+
-                            " AND (CEA.DEL_YN = 'N' or CEA.DEL_YN is null ) ";
-                //params.addValue("taskId", taskId);
-                //params.addValue("appSeq", appSeq);
+                        " LEFT JOIN TB_COMP_TASK_APP_DT_EMP_ANS CTADEA "+
+                            " ON CTADEA.TASK_ID = TP1.TASK_ID "+
+                            " AND CTADEA.APP_SEQ = TP1.APP_SEQ "+
+                            " AND CTADEA.EMP_NO = TP1.EMP_NO "+
+                            " AND (CTADEA.DEL_YN = 'N' or CTADEA.DEL_YN is null ) ";
+                } else {
+                    query = "WITH TMP1 AS (" +
+                            " SELECT TASK.TASK_ID AS task_id "+
+                            "     , TASK.TASK_NM AS task_nm "+
+                            "     , EMP.EMP_NM AS emp_nm "+
+                            "     , EMP.EMP_NO AS emp_no "+
+                            "     , COALESCE(EMP.IP, '0.0.0.0') AS ip "+
+                            "     , CTAD.APP_SEQ "+
+                            "     , CTAD.TASK_APP_DT "+
+                            " FROM TB_COMP_TASK TASK "+
+                            " , TB_COMP_TASK_APP_DT CTAD "+
+                            " , TB_EMP EMP "+
+                            " WHERE TASK.TASK_ID = :taskId "+
+                            " AND TASK.TASK_ID = CTAD.TASK_ID "+
+                            " AND CTAD.APP_SEQ = :appSeq "+
+                            " ORDER BY TASK.TASK_ID, CTAD.TASK_APP_DT, EMP.EMP_NO "+
+                        " ) "+
+                        " SELECT TP1.task_id "+
+                            " , TP1.task_nm "+
+                            " , TP1.APP_SEQ "+
+                            " , TP1.TASK_APP_DT "+
+                            " , TP1.emp_nm "+
+                            " , TP1.emp_no "+
+                            " , TP1.ip  "+
+                            " , COALESCE(CTADEA.EMP_MAIN_ANS_YN, 'N') AS emp_main_ans_yn   "+
+                            " , CTADEA.ANS_DT AS ans_dt  "+
+                        " FROM TMP1 TP1 "+
+                        " LEFT JOIN TB_COMP_TASK_APP_DT_EMP_ANS CTADEA "+
+                            " ON CTADEA.TASK_ID = TP1.TASK_ID "+
+                            " AND CTADEA.APP_SEQ = TP1.APP_SEQ "+
+                            " AND CTADEA.EMP_NO = TP1.EMP_NO "+
+                            " AND (CTADEA.DEL_YN = 'N' or CTADEA.DEL_YN is null ) ";
+                }
+                
             }
 
             List<Map<String, Object>> rows = jdbcTemplate.queryForList(query, params);
