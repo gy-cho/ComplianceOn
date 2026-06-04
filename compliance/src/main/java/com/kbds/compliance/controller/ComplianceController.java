@@ -289,9 +289,19 @@ public class ComplianceController {
     @GetMapping("/get-compliance-tasks")
     public ResponseEntity<?> getComplianceTasks() {
         try {
-            String query = "SELECT TASK_ID AS task_id, TASK_NM AS task_nm, TASK_TYPE AS task_type, " +
-                           "TASK_CN AS task_cn, RCRN_YN AS rcrn_yn, PBLS_YN AS pbls_yn " +
-                           "FROM TB_COMP_TASK WHERE DEL_YN = 'N' ORDER BY TASK_ID DESC";
+            String query = " SELECT TASK.TASK_ID AS task_id "+
+                            " , TASK.TASK_NM AS task_nm "+
+                            " , TASK.TASK_TYPE AS task_type "+
+                            " , TASK.TASK_CN AS task_cn "+
+                            " , TASK.RCRN_YN AS rcrn_yn "+
+                            " , TASK.PBLS_YN AS pbls_yn "+
+                            " , CTAD.APP_SEQ AS APP_SEQ "+
+                            " , CTAD.TASK_APP_DT AS TASK_APP_DT "+
+                        " FROM TB_COMP_TASK TASK, TB_COMP_TASK_APP_DT CTAD "+
+                        " WHERE TASK.DEL_YN = 'N' "+ 
+                        " AND TASK.TASK_ID = CTAD.TASK_ID "+
+                        " AND (CTAD.DEL_YN = 'N' or CTAD.DEL_YN is null ) "+
+                        " ORDER BY TASK.TASK_ID, CTAD.TASK_APP_DT ";
             List<Map<String, Object>> taskList = jdbcTemplate.queryForList(query, new MapSqlParameterSource());
             return ResponseEntity.ok(taskList);
         } catch (Exception e) {
