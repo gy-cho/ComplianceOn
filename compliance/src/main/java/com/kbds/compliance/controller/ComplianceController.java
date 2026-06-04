@@ -226,6 +226,7 @@ public class ComplianceController {
                             " AND CTADEA.APP_SEQ = TP1.APP_SEQ "+
                             " AND CTADEA.EMP_NO = TP1.EMP_NO "+
                             " AND (CTADEA.DEL_YN = 'N' or CTADEA.DEL_YN is null ) ";
+                            
                 }
                 
             }
