@@ -148,6 +148,7 @@ public class ComplianceController {
                             " , TP1.emp_no "+
                             " , TP1.ip  "+
                             " , COALESCE(CTADEA.EMP_MAIN_ANS_YN, 'N') AS emp_main_ans_yn   "+
+                            " , COALESCE(CTADEA.EMP_ANS_AGR_YN, 'N') AS emp_ans_agr_yn   "+
                             " , CTADEA.ANS_DT AS ans_dt  "+
                         " FROM TMP1 TP1 "+
                         " LEFT JOIN TB_COMP_TASK_APP_DT_EMP_ANS CTADEA "+
@@ -160,7 +161,7 @@ public class ComplianceController {
                 params.addValue("taskId", taskId);
                 params.addValue("appSeq", appSeq);
 
-                if ( appSeq == 0 ) {
+                if ( appSeq == null || appSeq == 0 ) {
                     query = "WITH TMP1 AS (" +
                             " SELECT TASK.TASK_ID AS task_id "+
                             "     , TASK.TASK_NM AS task_nm "+
@@ -184,6 +185,7 @@ public class ComplianceController {
                             " , TP1.emp_no "+
                             " , TP1.ip  "+
                             " , COALESCE(CTADEA.EMP_MAIN_ANS_YN, 'N') AS emp_main_ans_yn   "+
+                            " , COALESCE(CTADEA.EMP_ANS_AGR_YN, 'N') AS emp_ans_agr_yn   "+
                             " , CTADEA.ANS_DT AS ans_dt  "+
                         " FROM TMP1 TP1 "+
                         " LEFT JOIN TB_COMP_TASK_APP_DT_EMP_ANS CTADEA "+
@@ -216,6 +218,7 @@ public class ComplianceController {
                             " , TP1.emp_no "+
                             " , TP1.ip  "+
                             " , COALESCE(CTADEA.EMP_MAIN_ANS_YN, 'N') AS emp_main_ans_yn   "+
+                            " , COALESCE(CTADEA.EMP_ANS_AGR_YN, 'N') AS emp_ans_agr_yn   "+
                             " , CTADEA.ANS_DT AS ans_dt  "+
                         " FROM TMP1 TP1 "+
                         " LEFT JOIN TB_COMP_TASK_APP_DT_EMP_ANS CTADEA "+
@@ -247,7 +250,8 @@ public class ComplianceController {
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse(e.getMessage()));
+            throw e;
+            //return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse(e.getMessage()));
         }
     }
 
