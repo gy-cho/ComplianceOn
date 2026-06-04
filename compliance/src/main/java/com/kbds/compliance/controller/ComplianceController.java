@@ -41,7 +41,7 @@ public class ComplianceController {
     public ResponseEntity<?> submitCompliance(@RequestBody SubmitComplianceRequest data) {
         try {
             // [검증 1] 유효한 점검 항목(Task)인지 및 상태 확인
-            String taskQuery = "SELECT \"TASK_ID\", \"TASK_TYPE\", \"PBLS_YN\" FROM \"TB_COMP_TASK\" WHERE \"TASK_ID\" = :taskId AND \"DEL_YN\" = 'N'";
+            String taskQuery = "SELECT TASK_ID, TASK_TYPE, PBLS_YN FROM TB_COMP_TASK WHERE TASK_ID = :taskId AND DEL_YN = 'N'";
             MapSqlParameterSource params = new MapSqlParameterSource("taskId", data.getTask_id());
             List<Map<String, Object>> tasks = jdbcTemplate.queryForList(taskQuery, params);
 
@@ -54,7 +54,7 @@ public class ComplianceController {
             }
 
             // [검증 2] 등록된 마스터 사원인지 확인
-            String empQuery = "SELECT \"EMP_NO\" FROM \"TB_EMP\" WHERE \"EMP_NO\" = :empNo AND \"DEL_YN\" = 'N'";
+            String empQuery = "SELECT EMP_NO FROM TB_EMP WHERE EMP_NO = :empNo AND DEL_YN = 'N'";
             MapSqlParameterSource empParams = new MapSqlParameterSource("empNo", data.getEmp_no());
             List<Map<String, Object>> employees = jdbcTemplate.queryForList(empQuery, empParams);
 
@@ -63,8 +63,8 @@ public class ComplianceController {
             }
 
             // [검증 3] 중복 제출 방지 (동일 회차 및 사번 기준 완료 여부)
-            String logCheckQuery = "SELECT \"EMP_NO\" FROM \"TB_COMP_EMP_ANS\" " +
-                    "WHERE \"TASK_ID\" = :taskId AND \"APP_SEQ\" = :appSeq AND \"EMP_NO\" = :empNo AND \"EMP_ANS_YN\" = 'Y'";
+            String logCheckQuery = "SELECT EMP_NO FROM TB_COMP_EMP_ANS " +
+                    "WHERE TASK_ID = :taskId AND APP_SEQ = :appSeq AND EMP_NO = :empNo AND EMP_ANS_YN = 'Y'";
             MapSqlParameterSource logParams = new MapSqlParameterSource()
                     .addValue("taskId", data.getTask_id())
                     .addValue("appSeq", data.getApp_seq())
@@ -79,7 +79,7 @@ public class ComplianceController {
             String taskType = (String) task.get("TASK_TYPE");
 
             // [핵심 로직] 정규화 구조에 맞춘 로우 단위 적재
-            String insertQuery = "INSERT INTO \"TB_COMP_EMP_ANS\" (\"EMP_NO\", \"TASK_ID\", \"APP_SEQ\", \"QSTN_CD\", \"ANS_DT\", \"EMP_ANS_YN\", \"DEL_YN\", \"REG_EMP_NO\") " +
+            String insertQuery = "INSERT INTO TB_COMP_EMP_ANS (EMP_NO, TASK_ID, APP_SEQ, QSTN_CD, ANS_DT, EMP_ANS_YN, DEL_YN, REG_EMP_NO) " +
                     "VALUES (:empNo, :taskId, :appSeq, :qstnCd, :ansDt, :empAnsYn, 'N', :regEmpNo)";
 
             if ("ETHICS".equals(taskType) && (data.getAnswers() == null || data.getAnswers().isEmpty())) {
@@ -126,18 +126,18 @@ public class ComplianceController {
 
             if (taskId == null || taskId == 0) {
                 // 준법 항목 선택이 안 된 경우 기본 전체 마스터 사용자 가공 데이터 반환
-                query = "SELECT \"EMP_NM\" AS emp_nm, \"EMP_NO\" AS emp_no, \"IP\" AS ip, " +
-                        "'N' AS emp_ans_yn, NULL AS ans_dt FROM \"TB_EMP\" WHERE \"DEL_YN\" = 'N' ORDER BY \"EMP_NM\" ASC";
+                query = "SELECT EMP_NM AS emp_nm, EMP_NO AS emp_no, IP AS ip, " +
+                        "'N' AS emp_ans_yn, NULL AS ans_dt FROM TB_EMP WHERE DEL_YN = 'N' ORDER BY EMP_NM ASC";
             } else {
                 // CROSS JOIN + LEFT JOIN 연산 결합을 통해 미완료자 리스트까지 누락없이 결합 추출
-                query = "SELECT u.\"EMP_NM\" AS emp_nm, u.\"EMP_NO\" AS emp_no, COALESCE(u.\"IP\", '0.0.0.0') AS ip, " +
-                        "COALESCE(l.\"EMP_ANS_YN\", 'N') AS emp_ans_yn, l.\"ANS_DT\" AS ans_dt " +
-                        "FROM \"TB_EMP\" u " +
-                        "CROSS JOIN (SELECT \"TASK_ID\" FROM \"TB_COMP_TASK\" WHERE \"TASK_ID\" = :taskId AND \"DEL_YN\" = 'N') t " +
-                        "LEFT JOIN \"TB_COMP_EMP_ANS\" l ON u.\"EMP_NO\" = l.\"EMP_NO\" AND t.\"TASK_ID\" = l.\"TASK_ID\" " +
-                        "AND (:appSeq::int IS NULL OR l.\"APP_SEQ\" = :appSeq) " +
-                        "WHERE u.\"DEL_YN\" = 'N' " +
-                        "ORDER BY u.\"EMP_NM\" ASC";
+                query = "SELECT u.EMP_NM AS emp_nm, u.EMP_NO AS emp_no, COALESCE(u.IP, '0.0.0.0') AS ip, " +
+                        "COALESCE(l.EMP_ANS_YN, 'N') AS emp_ans_yn, l.ANS_DT AS ans_dt " +
+                        "FROM TB_EMP u " +
+                        "CROSS JOIN (SELECT TASK_ID FROM TB_COMP_TASK WHERE TASK_ID = :taskId AND DEL_YN = 'N') t " +
+                        "LEFT JOIN TB_COMP_EMP_ANS l ON u.EMP_NO = l.EMP_NO AND t.TASK_ID = l.TASK_ID " +
+                        "AND (:appSeq::int IS NULL OR l.APP_SEQ = :appSeq) " +
+                        "WHERE u.DEL_YN = 'N' " +
+                        "ORDER BY u.EMP_NM ASC";
                 params.addValue("taskId", taskId);
                 params.addValue("appSeq", appSeq);
             }
@@ -145,7 +145,7 @@ public class ComplianceController {
             List<Map<String, Object>> rows = jdbcTemplate.queryForList(query, params);
             List<Map<String, Object>> result = new ArrayList<>();
             
-            // 💡 자바의 패턴 규격 매칭 수정 (Y-m-d H:i:s -> yyyy-MM-dd HH:mm:ss)
+            // 💡 자바의 패턴 규격 매칭 (yyyy-MM-dd HH:mm:ss)
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
             for (Map<String, Object> row : rows) {
@@ -171,10 +171,10 @@ public class ComplianceController {
     public ResponseEntity<?> getAllEmployees() {
         try {
             // TB_EMP 테이블에서 삭제되지 않은 직원을 사원번호 순으로 정렬하여 조회
-            String query = "SELECT \"EMP_NO\" AS emp_no, \"EMP_NM\" AS emp_nm, \"IP\" AS ip " +
-                           "FROM \"TB_EMP\" " +
-                           "WHERE \"DEL_YN\" = 'N' " +
-                           "ORDER BY \"EMP_NO\" ASC";
+            String query = "SELECT EMP_NO AS emp_no, EMP_NM AS emp_nm, IP AS ip " +
+                           "FROM TB_EMP " +
+                           "WHERE DEL_YN = 'N' " +
+                           "ORDER BY EMP_NO ASC";
                            
             List<Map<String, Object>> empList = jdbcTemplate.queryForList(query, new MapSqlParameterSource());
             return ResponseEntity.ok(empList);
@@ -190,7 +190,7 @@ public class ComplianceController {
     @Transactional
     public ResponseEntity<?> addEmployee(@RequestBody EmployeeAddRequest data) {
         try {
-            String checkQuery = "SELECT \"EMP_NO\" FROM \"TB_EMP\" WHERE \"EMP_NO\" = :empNo";
+            String checkQuery = "SELECT EMP_NO FROM TB_EMP WHERE EMP_NO = :empNo";
             MapSqlParameterSource params = new MapSqlParameterSource("empNo", data.getEmp_no());
             List<Map<String, Object>> employees = jdbcTemplate.queryForList(checkQuery, params);
 
@@ -198,7 +198,7 @@ public class ComplianceController {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse("이미 등록된 사번입니다."));
             }
 
-            String insertQuery = "INSERT INTO \"TB_EMP\" (\"EMP_NO\", \"EMP_NM\", \"IP\", \"DEL_YN\", \"REG_EMP_NO\") " +
+            String insertQuery = "INSERT INTO TB_EMP (EMP_NO, EMP_NM, IP, DEL_YN, REG_EMP_NO) " +
                     "VALUES (:empNo, :empNm, :ip, 'N', 'ADMIN')";
             MapSqlParameterSource insertParams = new MapSqlParameterSource()
                     .addValue("empNo", data.getEmp_no())
@@ -224,7 +224,7 @@ public class ComplianceController {
             }
 
             // 하드 삭제 대신 시스템 안정성을 위해 DEL_YN = 'Y' 플래그 업데이트 처리
-            String deleteQuery = "UPDATE \"TB_EMP\" SET \"DEL_YN\" = 'Y' WHERE \"EMP_NO\" IN (:empNos)";
+            String deleteQuery = "UPDATE TB_EMP SET DEL_YN = 'Y' WHERE EMP_NO IN (:empNos)";
             MapSqlParameterSource params = new MapSqlParameterSource("empNos", data.getEmp_nos());
             
             int updatedCount = jdbcTemplate.update(deleteQuery, params);
@@ -240,13 +240,13 @@ public class ComplianceController {
         }
     }
 
-// 📌 [기존 호환 및 확장] 1. 준법 항목 목록 상세 조회 API (전체 필드 포함)
+    // 📌 [기존 호환 및 확장] 1. 준법 항목 목록 상세 조회 API (전체 필드 포함)
     @GetMapping("/get-compliance-tasks")
     public ResponseEntity<?> getComplianceTasks() {
         try {
-            String query = "SELECT \"TASK_ID\" AS task_id, \"TASK_NM\" AS task_nm, \"TASK_TYPE\" AS task_type, " +
-                           "\"TASK_CN\" AS task_cn, \"RCRN_YN\" AS rcrn_yn, \"PBLS_YN\" AS pbls_yn " +
-                           "FROM \"TB_COMP_TASK\" WHERE \"DEL_YN\" = 'N' ORDER BY \"TASK_ID\" DESC";
+            String query = "SELECT TASK_ID AS task_id, TASK_NM AS task_nm, TASK_TYPE AS task_type, " +
+                           "TASK_CN AS task_cn, RCRN_YN AS rcrn_yn, PBLS_YN AS pbls_yn " +
+                           "FROM TB_COMP_TASK WHERE DEL_YN = 'N' ORDER BY TASK_ID DESC";
             List<Map<String, Object>> taskList = jdbcTemplate.queryForList(query, new MapSqlParameterSource());
             return ResponseEntity.ok(taskList);
         } catch (Exception e) {
@@ -258,8 +258,8 @@ public class ComplianceController {
     @GetMapping("/get-question-pool")
     public ResponseEntity<?> getQuestionPool() {
         try {
-            String query = "SELECT \"QSTN_CD\" AS qstn_cd, \"QSTN_NM\" AS qstn_nm, \"QSTN_CN\" AS qstn_cn " +
-                           "FROM \"TB_COMP_QSTN_POOL\" WHERE \"DEL_YN\" = 'N' ORDER BY \"QSTN_CD\" ASC";
+            String query = "SELECT QSTN_CD AS qstn_cd, QSTN_NM AS qstn_nm, QSTN_CN AS qstn_cn " +
+                           "FROM TB_COMP_QSTN_POOL WHERE DEL_YN = 'N' ORDER BY QSTN_CD ASC";
             List<Map<String, Object>> qstnPool = jdbcTemplate.queryForList(query, new MapSqlParameterSource());
             return ResponseEntity.ok(qstnPool);
         } catch (Exception e) {
@@ -271,7 +271,7 @@ public class ComplianceController {
     @GetMapping("/get-task-questions")
     public ResponseEntity<?> getTaskQuestions(@RequestParam("taskId") int taskId) {
         try {
-            String query = "SELECT \"QSTN_CD\" AS qstn_cd FROM \"TB_COMP_TASK_QSTN\" WHERE \"TASK_ID\" = :taskId AND \"DEL_YN\" = 'N'";
+            String query = "SELECT QSTN_CD AS qstn_cd FROM TB_COMP_TASK_QSTN WHERE TASK_ID = :taskId AND DEL_YN = 'N'";
             MapSqlParameterSource params = new MapSqlParameterSource("taskId", taskId);
             List<Map<String, Object>> rows = jdbcTemplate.queryForList(query, params);
             
@@ -285,13 +285,13 @@ public class ComplianceController {
         }
     }
 
-// 📌 8. 이미 다른 TASK에서 사용 중인 모든 적용일 목록 조회 (과거 날짜 제외)
+    // 📌 8. 이미 다른 TASK에서 사용 중인 모든 적용일 목록 조회 (과거 날짜 제외)
     @GetMapping("/get-all-used-dates")
     public ResponseEntity<?> getAllUsedDates() {
         try {
-            String query = "SELECT DISTINCT TO_CHAR(\"TASK_APP_DT\", 'YYYY-MM-DD') AS app_dt " +
-                           "FROM \"TB_COMP_TASK_APP_DT\" " +
-                           "WHERE \"DEL_YN\" = 'N' AND \"TASK_APP_DT\" >= CURRENT_DATE";
+            String query = "SELECT DISTINCT TO_CHAR(TASK_APP_DT, 'YYYY-MM-DD') AS app_dt " +
+                           "FROM TB_COMP_TASK_APP_DT " +
+                           "WHERE DEL_YN = 'N' AND TASK_APP_DT >= CURRENT_DATE";
             List<Map<String, Object>> rows = jdbcTemplate.queryForList(query, new MapSqlParameterSource());
             List<String> dates = rows.stream().map(r -> (String) r.get("app_dt")).toList();
             return ResponseEntity.ok(dates);
@@ -304,10 +304,10 @@ public class ComplianceController {
     @GetMapping("/get-task-dates")
     public ResponseEntity<?> getTaskDates(@RequestParam("taskId") int taskId) {
         try {
-            String query = "SELECT \"APP_SEQ\" AS app_seq, TO_CHAR(\"TASK_APP_DT\", 'YYYY-MM-DD') AS task_app_dt " +
-                           "FROM \"TB_COMP_TASK_APP_DT\" " +
-                           "WHERE \"TASK_ID\" = :taskId AND \"DEL_YN\" = 'N' " +
-                           "ORDER BY \"APP_SEQ\" ASC";
+            String query = "SELECT APP_SEQ AS app_seq, TO_CHAR(TASK_APP_DT, 'YYYY-MM-DD') AS task_app_dt " +
+                           "FROM TB_COMP_TASK_APP_DT " +
+                           "WHERE TASK_ID = :taskId AND DEL_YN = 'N' " +
+                           "ORDER BY APP_SEQ ASC";
             List<Map<String, Object>> dates = jdbcTemplate.queryForList(query, new MapSqlParameterSource("taskId", taskId));
             return ResponseEntity.ok(dates);
         } catch (Exception e) {
@@ -321,8 +321,8 @@ public class ComplianceController {
     public ResponseEntity<?> createComplianceTask(@RequestBody Map<String, Object> payload) {
         try {
             // 1. 마스터 Insert
-            String taskQuery = "INSERT INTO \"TB_COMP_TASK\" (\"TASK_NM\", \"TASK_TYPE\", \"TASK_CN\", \"RCRN_YN\", \"PBLS_YN\", \"DEL_YN\", \"REG_EMP_NO\") " +
-                               "VALUES (:taskNm, :taskType, :taskCn, :rcrnYn, :pblcYn, 'N', 'SYSTEM') RETURNING \"TASK_ID\"";
+            String taskQuery = "INSERT INTO TB_COMP_TASK (TASK_NM, TASK_TYPE, TASK_CN, RCRN_YN, PBLS_YN, DEL_YN, REG_EMP_NO) " +
+                               "VALUES (:taskNm, :taskType, :taskCn, :rcrnYn, :pblcYn, 'N', 'SYSTEM') RETURNING TASK_ID";
             
             int taskId = jdbcTemplate.queryForObject(taskQuery, new MapSqlParameterSource(payload), Integer.class);
 
@@ -335,7 +335,7 @@ public class ComplianceController {
             if (payload.get("app_dates") != null) {
                 List<String> appDates = (List<String>) payload.get("app_dates");
                 if (!appDates.isEmpty()) {
-                    String dtQuery = "INSERT INTO \"TB_COMP_TASK_APP_DT\" (\"TASK_ID\", \"APP_SEQ\", \"TASK_APP_DT\", \"DEL_YN\", \"REG_EMP_NO\") " +
+                    String dtQuery = "INSERT INTO TB_COMP_TASK_APP_DT (TASK_ID, APP_SEQ, TASK_APP_DT, DEL_YN, REG_EMP_NO) " +
                                      "VALUES (:taskId, :appSeq, TO_DATE(:appDt, 'YYYY-MM-DD'), 'N', 'SYSTEM')";
                     List<Map<String, Object>> batchValues = new ArrayList<>();
                     int seq = 1;
@@ -359,11 +359,11 @@ public class ComplianceController {
             int taskId = (Integer) payload.get("task_id");
             
             // 1. 마스터 업데이트
-            String updateQuery = "UPDATE \"TB_COMP_TASK\" SET \"TASK_NM\" = :taskNm, \"PBLS_YN\" = :pblsYn, \"TASK_CN\" = :taskCn, \"CHG_DTM\" = now() WHERE \"TASK_ID\" = :taskId";
+            String updateQuery = "UPDATE TB_COMP_TASK SET TASK_NM = :taskNm, PBLS_YN = :pblsYn, TASK_CN = :taskCn, CHG_DTM = now() WHERE TASK_ID = :taskId";
             jdbcTemplate.update(updateQuery, new MapSqlParameterSource(payload));
 
             // 2. 기존 적용일 데이터 일괄 삭제 후 재등록 (또는 변경분 갱신)
-            jdbcTemplate.update("DELETE FROM \"TB_COMP_TASK_APP_DT\" WHERE \"TASK_ID\" = :taskId", new MapSqlParameterSource("taskId", taskId));
+            jdbcTemplate.update("DELETE FROM TB_COMP_TASK_APP_DT WHERE TASK_ID = :taskId", new MapSqlParameterSource("taskId", taskId));
             
             if (payload.get("app_dates") != null) {
                 List<String> appDates = (List<String>) payload.get("app_dates");
@@ -372,7 +372,7 @@ public class ComplianceController {
                 for (String dt : appDates) {
                     batchValues.add(Map.of("taskId", taskId, "appSeq", seq++, "appDt", dt));
                 }
-                String dtQuery = "INSERT INTO \"TB_COMP_TASK_APP_DT\" (\"TASK_ID\", \"APP_SEQ\", \"TASK_APP_DT\", \"DEL_YN\", \"REG_EMP_NO\") VALUES (:taskId, :appSeq, TO_DATE(:appDt, 'YYYY-MM-DD'), 'N', 'SYSTEM')";
+                String dtQuery = "INSERT INTO TB_COMP_TASK_APP_DT (TASK_ID, APP_SEQ, TASK_APP_DT, DEL_YN, REG_EMP_NO) VALUES (:taskId, :appSeq, TO_DATE(:appDt, 'YYYY-MM-DD'), 'N', 'SYSTEM')";
                 jdbcTemplate.batchUpdate(dtQuery, batchValues.toArray(new Map[0]));
             }
 
@@ -386,7 +386,7 @@ public class ComplianceController {
     @PostMapping("/delete-compliance-task")
     public ResponseEntity<?> deleteComplianceTask(@RequestParam("taskId") int taskId) {
         try {
-            String query = "UPDATE \"TB_COMP_TASK\" SET \"DEL_YN\" = 'Y', \"CHG_DTM\" = now() WHERE \"TASK_ID\" = :taskId";
+            String query = "UPDATE TB_COMP_TASK SET DEL_YN = 'Y', CHG_DTM = now() WHERE TASK_ID = :taskId";
             MapSqlParameterSource params = new MapSqlParameterSource("taskId", taskId);
             jdbcTemplate.update(query, params);
             return ResponseEntity.ok(Map.of("status", "success"));
