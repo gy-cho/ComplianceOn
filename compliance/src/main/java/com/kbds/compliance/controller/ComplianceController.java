@@ -126,8 +126,34 @@ public class ComplianceController {
 
             if (taskId == null || taskId == 0) {
                 // 준법 항목 선택이 안 된 경우 기본 전체 마스터 사용자 가공 데이터 반환
-                query = "SELECT EMP_NM AS emp_nm, EMP_NO AS emp_no, IP AS ip, " +
-                        "'N' AS emp_ans_yn, NULL AS ans_dt FROM TB_EMP WHERE DEL_YN = 'N' ORDER BY EMP_NM ASC";
+                query = "WITH TMP1 AS (" +
+                            " SELECT TASK.TASK_ID AS task_id "+
+                            "     , TASK.TASK_NM AS task_nm "+
+                            "     , EMP.EMP_NM AS emp_nm "+
+                            "     , EMP.EMP_NO AS emp_no "+
+                            "     , COALESCE(EMP.IP, '0.0.0.0') AS ip "+
+                            "     , CTAD.APP_SEQ "+
+                            "     , CTAD.TASK_APP_DT "+
+                            " FROM TB_COMP_TASK TASK "+
+                            " , TB_COMP_TASK_APP_DT CTAD "+
+                            " , TB_EMP EMP "+
+                            " WHERE TASK.TASK_ID = CTAD.TASK_ID "+
+                            " ORDER BY TASK.TASK_ID, CTAD.TASK_APP_DT, EMP.EMP_NO "+
+                        " ) "+
+                        " SELECT TP1.task_id "+
+                            " , TP1.task_nm "+
+                            " , TP1.emp_nm "+
+                            " , TP1.emp_no "+
+                            " , TP1.ip  "+
+                            " , COALESCE(CEA.EMP_ANS_YN, 'N') AS emp_ans_yn  "+
+                            " , CEA.ANS_DT AS ans_dt  "+
+                        " FROM TMP1 TP1 "+
+                        " LEFT JOIN TB_COMP_EMP_ANS CEA "+
+                            " ON CEA.TASK_ID = TP1.TASK_ID "+
+                            " AND CEA.APP_SEQ = TP1.APP_SEQ "+
+                            " AND CEA.EMP_NO = TP1.EMP_NO "+
+                            " AND (CEA.DEL_YN = 'N' or CEA.DEL_YN is null ) ";
+
             } else {
                 // CROSS JOIN + LEFT JOIN 연산 결합을 통해 미완료자 리스트까지 누락없이 결합 추출
                 query = "SELECT u.EMP_NM AS emp_nm, u.EMP_NO AS emp_no, COALESCE(u.IP, '0.0.0.0') AS ip, " +
