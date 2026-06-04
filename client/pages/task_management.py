@@ -22,6 +22,8 @@ def show_task_management_page():
         st.session_state.task_page_mode = "list"
     if "selected_task_data" not in st.session_state:
         st.session_state.selected_task_data = None
+
+    selectData = [ {"id": "ETHICS", "name": "윤리강령"}, {"id": "SELF_CHECK", "name": "자가점검"} ]
         
     # 날짜 다중 선택용 가상 임시 바구니 세션
     if "temp_app_dates" not in st.session_state:
@@ -51,6 +53,10 @@ def show_task_management_page():
                 df_view = df[["task_id", "task_nm", "task_type", "rcrn_yn", "pbls_yn"]].copy()
                 df_view.columns = ["TASK ID", "TASK명", "유형", "반복여부", "게시여부"]
                 
+                # 💡 추가: 출력용 데이터프레임에서만 ETHICS를 윤리강령으로 치환
+                df_view["유형"] = df_view["유형"].replace({"ETHICS": "윤리강령"})
+                df_view["유형"] = df_view["유형"].replace({"SELF_CHECK": "자가점검"})
+
                 event = st.dataframe(
                     df_view, use_container_width=True, hide_index=True,
                     on_select="rerun", selection_mode="single-row",
@@ -84,8 +90,13 @@ def show_task_management_page():
             task_nm = st.text_input("TASK 명", placeholder="예: 2026년 하반기 정보보안 서약 관리")
             
             c_col1, c_col2, c_col3 = st.columns(3)
+
             with c_col1:
-                task_type = st.selectbox("TASK 유형 선택", ["ETHICS", "SELF_CHECK"])
+                task_type = st.selectbox(
+                    "TASK 유형 선택", 
+                    ["ETHICS", "SELF_CHECK"],
+                    format_func=lambda x: next((item["name"] for item in selectData if item["id"] == x), x)
+                )
             with c_col2:
                 rcrn_yn = st.radio("정기 반복 여부", ["N", "Y"], horizontal=True)
             with c_col3:
@@ -192,8 +203,12 @@ def show_task_management_page():
             
             d_col1, d_col2, d_col3 = st.columns(3)
             with d_col1:
-                st.text_input("TASK 유형", value=task_info.get("task_type"), disabled=True)
+                current_type = task_info.get("task_type")
+                display_type = next((item["name"] for item in selectData if item["id"] == current_type), current_type)
+                st.text_input("TASK 유형", value=display_type, disabled=True)
             with d_col2:
+                current_type = task_info.get("task_type")
+                display_type = next((item["name"] for item in selectData if item["id"] == current_type), current_type)
                 st.text_input("정기 반복 여부", value=task_info.get("rcrn_yn", "N"), disabled=True)
             with d_col3:
                 edit_pbls = st.radio("게시 상태 전환", ["Y", "N"], index=0 if task_info.get("pbls_yn") == "Y" else 1, horizontal=True)

@@ -1,11 +1,22 @@
 import streamlit as st
+
 from datetime import datetime
 from api_utils import fetch_emp_answers, fetch_compliance_tasks
 from styles import KB_YELLOW, apply_dashboard_style
 from common.toast import show_toast
 
 def show_dashboard_page():
+        
     apply_dashboard_style()
+
+    # =====================================================================
+    # 💡 [신규 추가] HTML 카드(a 태그)를 클릭했을 때 넘어온 파라미터를 읽어 필터에 적용
+    # =====================================================================
+    if "status_click" in st.query_params:
+        st.session_state.status_filter = st.query_params["status_click"]
+        # 파라미터를 읽은 후 URL을 깔끔하게 유지하기 위해 삭제 (다음 동작 시 충돌 방지)
+        del st.query_params["status_click"]
+    # =====================================================================
 
     # [타이틀 영역] 상단 새로고침 버튼 레이아웃 구조 정렬
     title_col, empty_col, btn_col1 = st.columns([2, 6.3, 0.8])
@@ -14,7 +25,7 @@ def show_dashboard_page():
         st.markdown('<div class="page-title">현황조회</div>', unsafe_allow_html=True)
         
     with btn_col1:
-        if st.button("새로고침", use_container_width=True):
+        if st.button("", icon=":material/refresh:", help="새로고침", use_container_width=True):
             show_toast("success", "데이터가 새로고침 되었습니다!")
             st.rerun()
 
@@ -63,77 +74,78 @@ def show_dashboard_page():
         today = datetime.now().strftime('%Y-%m-%d')
         today_done = len(df[(df["답변여부"] == "완료") & (df['답변일시'].fillna('').str.contains(today, na=False))])
 
-        if "metric_filter" not in st.session_state:
-            st.session_state.metric_filter = "전체"
+        if "status_filter" not in st.session_state:
+            st.session_state.status_filter = "전체"
 
         # --------------------------------------------------------------------------------
-        # [박스 2]: [대시보드 통계] 영역
+        # [박스 2]: [대시보드 통계] 영역 (st.button 없이 순수 st.markdown a 태그 활용)
         # --------------------------------------------------------------------------------
         with st.container():
             st.markdown('<div class="card-content-v2">', unsafe_allow_html=True)
             
             m_col1, m_col2, m_col3 = st.columns(3, gap="small")
-            invisible_style = """
+            
+            # 💡 [핵심 CSS] a 태그의 기본 파란색 밑줄 디자인을 제거하고, hover 시 입체감만 부여
+            hover_style = """
             <style>
-                div[data-testid="stHorizontalBlock"] div.stButton > button[key="click_all"],
-                div[data-testid="stHorizontalBlock"] div.stButton > button[key="click_done"],
-                div[data-testid="stHorizontalBlock"] div.stButton > button[key="click_pending"] {
-                    position: absolute !important;
-                    width: 100% !important;
-                    height: 140px !important;
-                    background-color: transparent !important;
-                    color: transparent !important;
-                    border: none !important;
-                    cursor: pointer !important;
-                    z-index: 10 !important;
+                a.custom-card-link {
+                    text-decoration: none !important;
+                    color: inherit !important;
+                    display: block !important;
+                }
+                .metric-card {
+                    transition: transform 0.2s, box-shadow 0.2s !important;
+                }
+                a.custom-card-link:hover .metric-card {
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
+                    transform: translateY(-3px) !important;
                 }
             </style>
             """
+            st.markdown(hover_style, unsafe_allow_html=True)
 
             with m_col1:
-                st.markdown(invisible_style, unsafe_allow_html=True)
-                if st.button("전체보기", key="click_all", use_container_width=True):
-                    st.session_state.metric_filter = "전체"
-                
+                # 💡 a 태그의 href="?status_click=전체" 가 버튼 역할을 대신합니다.
                 st.markdown(f"""
-                    <div class="metric-container">
-                        <div class="metric-card" style="width: 100%; cursor: pointer;">
-                            <div class="metric-label">대상자 총원</div>
-                            <div class="metric-value">{total_count} 명</div>
-                            <div class="metric-sub">DB 등록 기준</div>
+                    <a href="?status_click=전체" target="_self" class="custom-card-link">
+                        <div class="metric-container">
+                            <div class="metric-card" style="width: 100%; cursor: pointer;">
+                                <div class="metric-label">대상자 총원</div>
+                                <div class="metric-value">{total_count} 명</div>
+                                <div class="metric-sub">DB 등록 기준</div>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 """, unsafe_allow_html=True)
 
             with m_col2:
-                st.markdown(invisible_style, unsafe_allow_html=True)
-                if st.button("완료보기", key="click_done", use_container_width=True):
-                    st.session_state.metric_filter = "완료"
-                
+                # 💡 a 태그의 href="?status_click=완료" 가 버튼 역할을 대신합니다.
                 st.markdown(f"""
-                    <div class="metric-container">
-                        <div class="metric-card" style="width: 100%; cursor: pointer;">
-                            <div class="metric-label">답변 완료</div>
-                            <div class="metric-value" style="color: {KB_YELLOW};">{done_count} 명</div>
-                            <div class="metric-sub" style="color: #4CAF50;">(오늘 +{today_done}명 완료)</div>
+                    <a href="?status_click=완료" target="_self" class="custom-card-link">
+                        <div class="metric-container">
+                            <div class="metric-card" style="width: 100%; cursor: pointer;">
+                                <div class="metric-label">답변 완료</div>
+                                <div class="metric-value" style="color: {KB_YELLOW};">{done_count} 명</div>
+                                <div class="metric-sub" style="color: #4CAF50;">(오늘 +{today_done}명 완료)</div>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 """, unsafe_allow_html=True)
 
             with m_col3:
-                st.markdown(invisible_style, unsafe_allow_html=True)
-                if st.button("미동의보기", key="click_pending", use_container_width=True):
-                    st.session_state.metric_filter = "미완료"
-                
+                # 💡 a 태그의 href="?status_click=미완료" 가 버튼 역할을 대신합니다.
                 st.markdown(f"""
-                    <div class="metric-container">
-                        <div class="metric-card" style="width: 100%; cursor: pointer;">
-                            <div class="metric-label">미답변(진행중)</div>
-                            <div class="metric-value" style="color: #FF4B4B;">{pending_count} 명</div>
-                            <div class="metric-sub">미답변자 {pending_count}명</div>
+                    <a href="?status_click=미완료" target="_self" class="custom-card-link">
+                        <div class="metric-container">
+                            <div class="metric-card" style="width: 100%; cursor: pointer;">
+                                <div class="metric-label">미답변(진행중)</div>
+                                <div class="metric-value" style="color: #FF4B4B;">{pending_count} 명</div>
+                                <div class="metric-sub">미답변자 {pending_count}명</div>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 """, unsafe_allow_html=True)
+            
             st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -147,14 +159,20 @@ def show_dashboard_page():
             with col_search:
                 search = st.text_input("검색", placeholder="사원명, 사원번호 입력", label_visibility="collapsed")
             with col_filter:
-                status_filter = st.selectbox("필터", ["전체", "완료", "미완료"], label_visibility="collapsed")
+                # key를 지정하여 세션 상태와 Selectbox UI를 동기화
+                status_filter = st.selectbox(
+                    "필터", 
+                    ["전체", "완료", "미완료"], 
+                    key="status_filter", 
+                    label_visibility="collapsed"
+                )
             
             f_df = df.copy()
-            current_filter = status_filter
-            if st.session_state.metric_filter != "전체" and status_filter == "전체":
-                current_filter = st.session_state.metric_filter
-            if current_filter != "전체":
-                f_df = f_df[f_df["답변여부"] == current_filter]                
+            
+            # Selectbox의 결과값(status_filter)만으로 필터링 수행
+            if status_filter != "전체":
+                f_df = f_df[f_df["답변여부"] == status_filter]                
+            
             if search:
                 f_df = f_df[f_df['사원명'].astype(str).str.contains(search) | f_df['사원번호'].astype(str).str.contains(search)]
 
@@ -176,3 +194,4 @@ def show_dashboard_page():
             st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.info("선택된 준법 항목에 해당하는 답변 로그 데이터가 존재하지 않습니다.")
+        

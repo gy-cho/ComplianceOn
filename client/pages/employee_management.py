@@ -8,6 +8,13 @@ from styles import apply_employee_style
 def show_employee_management_page():
     apply_employee_style()
 
+    if "toast_queue" in st.session_state and st.session_state.toast_queue:
+        toast_data = st.session_state.toast_queue
+        show_toast(toast_data["type"], toast_data["msg"])
+        
+        # 메시지를 한 번 띄운 후에는 반복해서 뜨지 않도록 세션에서 삭제합니다.
+        del st.session_state.toast_queue
+
     # 삭제 확인 팝업 상태 및 선택 데이터 관리를 위한 세션 초기화
     if "show_delete_confirm" not in st.session_state:
         st.session_state.show_delete_confirm = False
