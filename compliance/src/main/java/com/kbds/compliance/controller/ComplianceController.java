@@ -156,16 +156,35 @@ public class ComplianceController {
 
             } else {
                 // CROSS JOIN + LEFT JOIN 연산 결합을 통해 미완료자 리스트까지 누락없이 결합 추출
-                query = "SELECT u.EMP_NM AS emp_nm, u.EMP_NO AS emp_no, COALESCE(u.IP, '0.0.0.0') AS ip, " +
-                        "COALESCE(l.EMP_ANS_YN, 'N') AS emp_ans_yn, l.ANS_DT AS ans_dt " +
-                        "FROM TB_EMP u " +
-                        "CROSS JOIN (SELECT TASK_ID FROM TB_COMP_TASK WHERE TASK_ID = :taskId AND DEL_YN = 'N') t " +
-                        "LEFT JOIN TB_COMP_EMP_ANS l ON u.EMP_NO = l.EMP_NO AND t.TASK_ID = l.TASK_ID " +
-                        "AND (:appSeq::int IS NULL OR l.APP_SEQ = :appSeq) " +
-                        "WHERE u.DEL_YN = 'N' " +
-                        "ORDER BY u.EMP_NM ASC";
-                params.addValue("taskId", taskId);
-                params.addValue("appSeq", appSeq);
+                query = "WITH TMP1 AS (" +
+                            " SELECT TASK.TASK_ID AS task_id "+
+                            "     , TASK.TASK_NM AS task_nm "+
+                            "     , EMP.EMP_NM AS emp_nm "+
+                            "     , EMP.EMP_NO AS emp_no "+
+                            "     , COALESCE(EMP.IP, '0.0.0.0') AS ip "+
+                            "     , CTAD.APP_SEQ "+
+                            "     , CTAD.TASK_APP_DT "+
+                            " FROM TB_COMP_TASK TASK "+
+                            " , TB_COMP_TASK_APP_DT CTAD "+
+                            " , TB_EMP EMP "+
+                            " WHERE TASK.TASK_ID = CTAD.TASK_ID "+
+                            " ORDER BY TASK.TASK_ID, CTAD.TASK_APP_DT, EMP.EMP_NO "+
+                        " ) "+
+                        " SELECT TP1.task_id "+
+                            " , TP1.task_nm "+
+                            " , TP1.emp_nm "+
+                            " , TP1.emp_no "+
+                            " , TP1.ip  "+
+                            " , COALESCE(CEA.EMP_ANS_YN, 'N') AS emp_ans_yn  "+
+                            " , CEA.ANS_DT AS ans_dt  "+
+                        " FROM TMP1 TP1 "+
+                        " LEFT JOIN TB_COMP_EMP_ANS CEA "+
+                            " ON CEA.TASK_ID = TP1.TASK_ID "+
+                            " AND CEA.APP_SEQ = TP1.APP_SEQ "+
+                            " AND CEA.EMP_NO = TP1.EMP_NO "+
+                            " AND (CEA.DEL_YN = 'N' or CEA.DEL_YN is null ) ";
+                //params.addValue("taskId", taskId);
+                //params.addValue("appSeq", appSeq);
             }
 
             List<Map<String, Object>> rows = jdbcTemplate.queryForList(query, params);
