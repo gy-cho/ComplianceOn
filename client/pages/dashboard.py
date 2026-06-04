@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 
 from datetime import datetime
 from api_utils import fetch_emp_answers, fetch_compliance_tasks
@@ -34,37 +35,70 @@ def show_dashboard_page():
     # --------------------------------------------------------------------------------
     with st.container():
         st.markdown('<div class="card-content-v2">', unsafe_allow_html=True)
-        st.markdown('<div class="box-section-title">■ 준법 항목 선택</div>', unsafe_allow_html=True)
         
-        # fetch_compliance_tasks 호출하여 실시간 DB 항목 조회
-        status_code, task_list = fetch_compliance_tasks()
+        col_sel = st.columns([1], gap="small")[0]
         
-        # 방어 코드 및 셀렉트박스 표시용 딕셔너리 매핑
-        task_options = {}
-        if status_code == 200 and isinstance(task_list, list) and len(task_list) > 0:
-            for task in task_list:
-                task_options[task["task_id"]] = task["task_nm"]
-        else:
-            task_options[0] = "등록된 준법 항목이 없습니다."
+        with col_sel:
+            st.markdown('<div class="box-section-title">■ 준법 항목 및 적용일 선택</div>', unsafe_allow_html=True)
+            
+            # 💡 [핵심] 두 셀렉트 박스를 같은 행에 나란히 배치하기 위해 내부를 2개로 분할
+            inner_col1, inner_col2 = st.columns([2.5, 1], gap="small")
+            
+            # fetch_compliance_tasks 호출
+            status_code, task_list = fetch_compliance_tasks()
+            
+            selected_task_id = 0
+            selected_app_seq = None
+            
+            if status_code == 200 and isinstance(task_list, list) and len(task_list) > 0:
+                task_dict = {task["task_id"]: task for task in task_list}
+                
+                # 💡 [첫 번째 드롭다운] 왼쪽 내부 컬럼에 배치
+                with inner_col1:
+                    selected_task_id = st.selectbox(
+                        "준법 항목 선택",
+                        options=list(task_dict.keys()),
+                        format_func=lambda x: task_dict[x].get("task_nm", "이름 없음"),
+                        label_visibility="collapsed"
+                    )
+                
+                current_task = task_dict.get(selected_task_id, {})
+                app_dt_list = current_task.get("task_app_dt", [])
+                
+                # 💡 [두 번째 드롭다운] 오른쪽 내부 컬럼에 배치
+                with inner_col2:
+                    if app_dt_list:
+                        seq_to_date = {0: "전체"} 
+                        for item in app_dt_list:
+                            raw_date = item.get("task_app_dt", "")
+                            clean_date = raw_date.split("T")[0] if "T" in raw_date else raw_date
+                            display_text = f"{clean_date} ({item['app_seq']}회차)"
+                            seq_to_date[item["app_seq"]] = display_text
+                        
+                        sorted_seqs = sorted(list(seq_to_date.keys()))
+                        
+                        selected_app_seq = st.selectbox(
+                            "적용일 선택",
+                            options=sorted_seqs,
+                            format_func=lambda x: seq_to_date[x],
+                            label_visibility="collapsed"
+                        )
+                    else:
+                        # 해당 항목에 등록된 적용일이 없을 경우 레이아웃이 깨지지 않게 안내 메시지 노출
+                        st.info("할당된 적용일 없음")
+            else:
+                st.info("등록된 준법 항목이 없습니다.")
         
-        # 준법 항목 셀렉트 박스
-        selected_task_id = st.selectbox(
-            "준법 항목 선택",
-            options=list(task_options.keys()),
-            format_func=lambda x: task_options[x],
-            label_visibility="collapsed"
-        )
         st.markdown('</div>', unsafe_allow_html=True)
 
     # --------------------------------------------------------------------------------
-    # 💡 [조회 방어 조건 추가]: 등록된 항목이 없거나 ID가 0이면 API를 호출하지 않고 종료
+    # 💡 [조회 방어 조건 및 API 호출]: 선택된 TASK와 날짜(SEQ)가 모두 있어야 API 호출
     # --------------------------------------------------------------------------------
-    if selected_task_id == 0:
-        st.info("등록된 준법 항목이 없습니다. 항목을 먼저 등록해 주세요.")
-        return  # 함수를 여기서 종료하여 아래 API 호출 및 대시보드 렌더링을 차단합니다.
+    if selected_task_id == 0 or selected_app_seq is None:
+        return  # 항목이나 날짜가 없으면 아래 대시보드 표를 그리지 않고 종료
 
-    # 정상적인 타스크 ID가 있을 때만 백엔드 서버 조회 수행
-    df = fetch_emp_answers(task_id=selected_task_id)
+    # 💡 핵심: api_utils.py의 fetch_emp_answers 함수에 task_id와 app_seq를 함께 전달
+    df = fetch_emp_answers(task_id=selected_task_id, app_seq=selected_app_seq)
     
     if not df.empty:
         # 데이터프레임 컬럼 구조: ["사원명", "사원번호", "IP", "답변여부", "답변일시"]
