@@ -289,20 +289,35 @@ public class ComplianceController {
     @GetMapping("/get-compliance-tasks")
     public ResponseEntity<?> getComplianceTasks() {
         try {
-            String query = " SELECT TASK.TASK_ID AS task_id "+
-                            " , TASK.TASK_NM AS task_nm "+
-                            " , TASK.TASK_TYPE AS task_type "+
-                            " , TASK.TASK_CN AS task_cn "+
-                            " , TASK.RCRN_YN AS rcrn_yn "+
-                            " , TASK.PBLS_YN AS pbls_yn "+
-                            " , CTAD.APP_SEQ AS APP_SEQ "+
-                            " , CTAD.TASK_APP_DT AS TASK_APP_DT "+
+            String query = "SELECT TASK_ID AS task_id, TASK_NM AS task_nm, TASK_TYPE AS task_type, " +
+                           "TASK_CN AS task_cn, RCRN_YN AS rcrn_yn, PBLS_YN AS pbls_yn " +
+                           "FROM TB_COMP_TASK WHERE DEL_YN = 'N' ORDER BY TASK_ID DESC";
+
+            List<Map<String, Object>> taskList = jdbcTemplate.queryForList(query, new MapSqlParameterSource());
+
+            query = " SELECT TASK.TASK_ID AS task_id "+
+                            " , CTAD.APP_SEQ AS app_seq "+
+                            " , CTAD.TASK_APP_DT AS task_app_dt "+
                         " FROM TB_COMP_TASK TASK, TB_COMP_TASK_APP_DT CTAD "+
                         " WHERE TASK.DEL_YN = 'N' "+ 
                         " AND TASK.TASK_ID = CTAD.TASK_ID "+
                         " AND (CTAD.DEL_YN = 'N' or CTAD.DEL_YN is null ) "+
                         " ORDER BY TASK.TASK_ID, CTAD.TASK_APP_DT ";
-            List<Map<String, Object>> taskList = jdbcTemplate.queryForList(query, new MapSqlParameterSource());
+            List<Map<String, Object>> taskListAppDate = jdbcTemplate.queryForList(query, new MapSqlParameterSource());
+
+            for (Map<String, Object> task : taskList) {
+                int task_id = (Integer) task.get("task_id");
+                List<Map<String, Object>> appDateList = new ArrayList<>();
+                for (Map<String, Object> appDate : taskListAppDate) {
+                    
+                    int app_dt_task_id = (Integer) appDate.get("task_id");
+                    if ( task_id == app_dt_task_id ) {
+                        appDateList.add(appDate);
+                    }
+
+                }
+                task.put("task_app_dt",appDateList);
+            }
             return ResponseEntity.ok(taskList);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
