@@ -295,8 +295,8 @@ public class ComplianceController {
 
             if ( empList.size() > 0 ) { // 대상 직원이면
                 LocalDate todayLocalDate = LocalDate.now();
-                Date todayDate = new Date();
-                todayDate = Date.from(todayLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+                String todayDate = todayLocalDate.toString();
+                params.addValue("todayDate", todayDate);
                 
                 query = "SELECT TASK.TASK_ID AS task_id "+
                             " , TASK.TASK_NM AS task_nm "+
@@ -310,7 +310,7 @@ public class ComplianceController {
                             " , CTAD.TASK_APP_DT AS task_app_dt "+
                         " FROM TB_COMP_TASK TASK, TB_COMP_TASK_APP_DT CTAD "+
                         " WHERE TASK.TASK_ID = CTAD.TASK_ID "+
-                        " AND CTAD.TASK_APP_DT = :todayDate "+
+                        " AND CTAD.TASK_APP_DT = TO_DATE(:todayDate, 'YYYY-MM-DD')"+
                         " AND (TASK.DEL_YN = 'N' OR TASK.DEL_YN = NULL) "+
                         " AND (CTAD.DEL_YN = 'N' OR CTAD.DEL_YN = NULL)";
                 results = jdbcTemplate.queryForList(query, params);
@@ -344,8 +344,8 @@ public class ComplianceController {
             return ResponseEntity.ok(results);
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", e.getMessage()));
+            throw e;
+            //return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
         }
     }
 
