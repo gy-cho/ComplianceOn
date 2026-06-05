@@ -191,7 +191,7 @@ def show_dashboard_page():
             col_search, col_filter = st.columns([3.6, 1], gap="small")
             
             with col_search:
-                search = st.text_input("검색", placeholder="사원명, 사원번호 입력", label_visibility="collapsed")
+                search = st.text_input("검색", placeholder="이름, 사원번호 입력", label_visibility="collapsed")
             with col_filter:
                 # key를 지정하여 세션 상태와 Selectbox UI를 동기화
                 status_filter = st.selectbox(
@@ -208,7 +208,7 @@ def show_dashboard_page():
                 f_df = f_df[f_df["답변여부"] == status_filter]                
             
             if search:
-                f_df = f_df[f_df['사원명'].astype(str).str.contains(search) | f_df['사원번호'].astype(str).str.contains(search)]
+                f_df = f_df[f_df['이름'].astype(str).str.contains(search)]
 
             st.markdown('<div style="margin-top: 10px;"></div>', unsafe_allow_html=True)
             st.data_editor(
@@ -216,7 +216,7 @@ def show_dashboard_page():
                 hide_index=True,
                 use_container_width=True,
                 column_config={
-                        "사원명": st.column_config.Column(width="medium"),
+                        "이름": st.column_config.Column(width="medium"),
                         "사원번호": st.column_config.Column(width="medium"),
                         "IP": st.column_config.Column(width="medium"),
                         "답변여부": st.column_config.Column(width="small"),
