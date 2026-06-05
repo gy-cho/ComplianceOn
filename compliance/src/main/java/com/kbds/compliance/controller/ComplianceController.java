@@ -600,7 +600,7 @@ System.out.println("results ====>> "+results);
     }
 
     // 📌 6. TASK 소프트 삭제(Soft Delete) API
-    @PostMapping("/get-img-pool")
+    @GetMapping("/get-img-pool")
     public ResponseEntity<?> getComplianceImgPool() {
         try {
             String query = "SELECT IMG_ID AS img_id " +
