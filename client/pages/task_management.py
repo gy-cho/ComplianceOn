@@ -176,7 +176,9 @@ def show_task_management_page():
                         "task_cn": task_cn if task_type == "ETHICS" else None,
                         "rcrn_yn": rcrn_yn, "pbls_yn": pbls_yn,
                         "selected_qstn_cds": selected_qstn_cds if task_type == "SELF_CHECK" else [],
-                        "app_dates": st.session_state.temp_app_dates
+                        "app_dates": st.session_state.temp_app_dates,
+                        # 실제 로그인한 사번이 필요
+                        "emp_no": "admin"
                     }
                     if create_compliance_task(payload) == 200:
                         show_toast("success", "새로운 준법 제어 TASK가 DB에 등록되었습니다.")
@@ -290,7 +292,9 @@ def show_task_management_page():
                         "task_nm": edit_nm,
                         "pbls_yn": edit_pbls,
                         "task_cn": edit_cn if task_info.get("task_type") == "ETHICS" else None,
-                        "app_dates": st.session_state.temp_app_dates
+                        "app_dates": st.session_state.temp_app_dates,
+                        # 실제 로그인한 사번이 필요
+                        "emp_no": "admin"
                     }
                     if update_compliance_task(payload) == 200:
                         show_toast("success", "준법 제어 변경사항이 갱신되었습니다.")
