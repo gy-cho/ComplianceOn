@@ -513,8 +513,8 @@ System.out.println("results ====>> "+results);
 
             
             // 1. 마스터 Insert
-            String taskQuery = "INSERT INTO TB_COMP_TASK (TASK_NM, TASK_TYPE, TASK_CN, RCRN_YN, PBLS_YN, DEL_YN, REG_EMP_NO) " +
-                               "VALUES (:task_nm, :task_type, :task_cn, :rcrn_yn, :pbls_yn, 'N', :emp_no) RETURNING TASK_ID";
+            String taskQuery = "INSERT INTO TB_COMP_TASK (TASK_NM, TASK_TYPE, TASK_CN, IMG_FLNM, RCRN_YN, PBLS_YN, DEL_YN, REG_EMP_NO) " +
+                               "VALUES (:task_nm, :task_type, :task_cn, :img_flmn, :rcrn_yn, :pbls_yn, 'N', :emp_no) RETURNING TASK_ID";
             
             int taskId = jdbcTemplate.queryForObject(taskQuery, new MapSqlParameterSource(payload), Integer.class);
             String emp_no = (String) payload.get("emp_no");
@@ -558,7 +558,7 @@ System.out.println("results ====>> "+results);
             String emp_no = (String) payload.get("emp_no");
             
             // 1. 마스터 업데이트
-            String updateQuery = "UPDATE TB_COMP_TASK SET TASK_NM = :task_nm, PBLS_YN = :pbls_yn, TASK_CN = :task_cn, CHG_DTM = now(), CHG_EMP_NO = :emp_no WHERE TASK_ID = :task_id";
+            String updateQuery = "UPDATE TB_COMP_TASK SET TASK_NM = :task_nm, IMG_FLMN = :img_flnm, PBLS_YN = :pbls_yn, TASK_CN = :task_cn, CHG_DTM = now(), CHG_EMP_NO = :emp_no WHERE TASK_ID = :task_id";
             jdbcTemplate.update(updateQuery, new MapSqlParameterSource(payload));
 
             // 2. 기존 적용일 데이터 일괄 삭제 후 재등록 (또는 변경분 갱신)
