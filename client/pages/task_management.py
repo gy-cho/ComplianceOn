@@ -150,6 +150,7 @@ def show_task_management_page():
             
             task_cn = ""
             selected_qstn_cds = []
+            selected_image_id = None
             if task_type == "ETHICS":
                 # 💡 [핵심 수정] text_area를 삭제하고, 이미지 API를 호출하여 무조건 하나를 선택하게 함
                 image_list = fetch_task_images()
