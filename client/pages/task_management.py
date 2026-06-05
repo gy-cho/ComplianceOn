@@ -150,6 +150,7 @@ def show_task_management_page():
             
             task_cn = ""
             selected_qstn_cds = []
+            selected_image_id = None
             if task_type == "ETHICS":
                 # 💡 [핵심 수정] text_area를 삭제하고, 이미지 API를 호출하여 무조건 하나를 선택하게 함
                 image_list = fetch_task_images()
@@ -174,7 +175,6 @@ def show_task_management_page():
         ctrl_col1, ctrl_col2, ctrl_space = st.columns([1.5, 1.5, 7])
         with ctrl_col1:
             if st.button("등록", type="primary", use_container_width=True):
-                print("test: ", selected_image_id)
                 if not task_nm.strip():
                     show_toast("error", "TASK 명을 입력해 주세요.")
                 elif not st.session_state.temp_app_dates:
@@ -277,8 +277,33 @@ def show_task_management_page():
         with st.container():
             st.markdown('<div class="card-content-v2">', unsafe_allow_html=True)
             st.markdown('<div class="box-section-title">■ 상세 본문 및 문항 매핑 현황</div>', unsafe_allow_html=True)
+
+            edit_cn = ""
+            selected_image_id = None
             if task_info.get("task_type") == "ETHICS":
-                edit_cn = st.text_area("서약 내용", value=task_info.get("task_cn", ""), height=180)
+                image_list = fetch_task_images()
+                
+                if image_list:
+                    # 1. 셀렉트박스에 들어갈 ID 목록 생성
+                    img_options = [img['img_flnm'] for img in image_list]
+                    
+                    # 2. 💡 DB에서 가져온 기존 저장 이미지 ID 확인 
+                    saved_img_id = task_info.get("img_flnm", img_options[0])  # 기본값은 옵션 목록의 첫 번째 항목으로 설정
+                    
+                    # 3. 💡 목록에서 기존 이미지의 위치(index)를 찾아 기본값으로 설정
+                    default_index = 0
+                    if saved_img_id in img_options:
+                        default_index = img_options.index(saved_img_id)
+                        
+                    # 4. index 파라미터를 적용하여 셀렉트박스 렌더링
+                    selected_image_id = st.selectbox(
+                        "서약 내용 이미지 수정 (필수)", 
+                        options=img_options,
+                        index=default_index, # 💡 핵심: 기존 이미지가 기본으로 선택됨
+                        format_func=lambda x: next((img['img_flnm'] for img in image_list if img['img_flnm'] == x), str(x))
+                    )
+                else:
+                    st.warning("서버에서 조회된 이미지 데이터가 없습니다.")
             elif task_info.get("task_type") == "SELF_CHECK":
                 st.caption("본 준법 자가점검 TASK에 포함되어 있는 질문 문항 목록입니다.")
                 mapped_cds = fetch_task_questions(task_info.get("task_id"))
@@ -299,14 +324,15 @@ def show_task_management_page():
                     show_toast("error", "최소 하나 이상의 적용 날짜가 유지되어야 합니다.")
                 elif not edit_nm.strip():
                     show_toast("error", "TASK 명은 비워둘 수 없습니다.")
-                elif task_type == "ETHICS" and not selected_image_id:
+                elif task_info.get("task_type") == "ETHICS" and not selected_image_id:
                     show_toast("error", "서약 이미지를 선택해야 합니다.")
                 else:
                     payload = {
                         "task_id": int(task_info.get("task_id")),
+                        "task_cn": None,
                         "task_nm": edit_nm,
                         "pbls_yn": edit_pbls,
-                        "task_cn": edit_cn if task_info.get("task_type") == "ETHICS" else None,
+                        "img_flnm": selected_image_id if task_info.get("task_type") == "ETHICS" else None,
                         "app_dates": st.session_state.temp_app_dates,
                         # 실제 로그인한 사번이 필요
                         "emp_no": "admin"
