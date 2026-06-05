@@ -509,11 +509,13 @@ public class ComplianceController {
     @Transactional
     public ResponseEntity<?> createComplianceTask(@RequestBody Map<String, Object> payload) {
         try {
+            String emp_no = (String) payload.get("emp_no");
             // 1. 마스터 Insert
             String taskQuery = "INSERT INTO TB_COMP_TASK (TASK_NM, TASK_TYPE, TASK_CN, RCRN_YN, PBLS_YN, DEL_YN, REG_EMP_NO) " +
-                               "VALUES (:taskNm, :taskType, :taskCn, :rcrnYn, :pblcYn, 'N', 'SYSTEM') RETURNING TASK_ID";
+                               "VALUES (:task_nm, :task_type, :task_cn, :rcrn_yn, :pblc_yn, 'N', :emp_no) RETURNING TASK_ID";
             
             int taskId = jdbcTemplate.queryForObject(taskQuery, new MapSqlParameterSource(payload), Integer.class);
+            
 
             // 2. 질문 매핑 (기존 로직 유지)
             if ("SELF_CHECK".equals(payload.get("task_type")) && payload.get("selected_qstn_cds") != null) {
@@ -525,11 +527,11 @@ public class ComplianceController {
                 List<String> appDates = (List<String>) payload.get("app_dates");
                 if (!appDates.isEmpty()) {
                     String dtQuery = "INSERT INTO TB_COMP_TASK_APP_DT (TASK_ID, APP_SEQ, TASK_APP_DT, DEL_YN, REG_EMP_NO) " +
-                                     "VALUES (:taskId, :appSeq, TO_DATE(:appDt, 'YYYY-MM-DD'), 'N', 'SYSTEM')";
+                                     "VALUES (:taskId, :appSeq, TO_DATE(:appDt, 'YYYY-MM-DD'), 'N', :empNo)";
                     List<Map<String, Object>> batchValues = new ArrayList<>();
                     int seq = 1;
                     for (String dt : appDates) {
-                        batchValues.add(Map.of("taskId", taskId, "appSeq", seq++, "appDt", dt));
+                        batchValues.add(Map.of("taskId", taskId, "appSeq", seq++, "appDt", dt, "empNo", emp_no));
                     }
                     jdbcTemplate.batchUpdate(dtQuery, batchValues.toArray(new Map[0]));
                 }
@@ -545,29 +547,35 @@ public class ComplianceController {
     @Transactional
     public ResponseEntity<?> updateComplianceTask(@RequestBody Map<String, Object> payload) {
         try {
-            int taskId = (Integer) payload.get("task_id");
+
+            System.out.println("=============== payload ================");
+            System.out.println(payload);
+
+            int task_id = (Integer) payload.get("task_id");
+            String emp_no = (String) payload.get("emp_no");
             
             // 1. 마스터 업데이트
-            String updateQuery = "UPDATE TB_COMP_TASK SET TASK_NM = :taskNm, PBLS_YN = :pblsYn, TASK_CN = :taskCn, CHG_DTM = now() WHERE TASK_ID = :taskId";
+            String updateQuery = "UPDATE TB_COMP_TASK SET TASK_NM = :task_nm, PBLS_YN = :pbls_yn, TASK_CN = :task_cn, CHG_DTM = now(), CHG_EMP_NO = :emp_no WHERE TASK_ID = :task_id";
             jdbcTemplate.update(updateQuery, new MapSqlParameterSource(payload));
 
             // 2. 기존 적용일 데이터 일괄 삭제 후 재등록 (또는 변경분 갱신)
-            jdbcTemplate.update("DELETE FROM TB_COMP_TASK_APP_DT WHERE TASK_ID = :taskId", new MapSqlParameterSource("taskId", taskId));
+            jdbcTemplate.update("DELETE FROM TB_COMP_TASK_APP_DT WHERE TASK_ID = :task_id", new MapSqlParameterSource("task_id", task_id));
             
             if (payload.get("app_dates") != null) {
                 List<String> appDates = (List<String>) payload.get("app_dates");
                 int seq = 1;
                 List<Map<String, Object>> batchValues = new ArrayList<>();
                 for (String dt : appDates) {
-                    batchValues.add(Map.of("taskId", taskId, "appSeq", seq++, "appDt", dt));
+                    batchValues.add(Map.of("task_id", task_id, "appSeq", seq++, "appDt", dt, "emp_no", emp_no));
                 }
-                String dtQuery = "INSERT INTO TB_COMP_TASK_APP_DT (TASK_ID, APP_SEQ, TASK_APP_DT, DEL_YN, REG_EMP_NO) VALUES (:taskId, :appSeq, TO_DATE(:appDt, 'YYYY-MM-DD'), 'N', 'SYSTEM')";
+                String dtQuery = "INSERT INTO TB_COMP_TASK_APP_DT (TASK_ID, APP_SEQ, TASK_APP_DT, DEL_YN, REG_EMP_NO) VALUES (:task_id, :appSeq, TO_DATE(:appDt, 'YYYY-MM-DD'), 'N', :emp_no)";
                 jdbcTemplate.batchUpdate(dtQuery, batchValues.toArray(new Map[0]));
             }
 
             return ResponseEntity.ok(Map.of("status", "success"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
+            throw e;
+            //return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
         }
     }
 
