@@ -9,7 +9,9 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -226,7 +228,7 @@ public class ComplianceController {
                             " AND CTADEA.APP_SEQ = TP1.APP_SEQ "+
                             " AND CTADEA.EMP_NO = TP1.EMP_NO "+
                             " AND (CTADEA.DEL_YN = 'N' or CTADEA.DEL_YN is null ) ";
-                            
+
                 }
                 
             }
@@ -268,6 +270,78 @@ public class ComplianceController {
                            
             List<Map<String, Object>> empList = jdbcTemplate.queryForList(query, new MapSqlParameterSource());
             return ResponseEntity.ok(empList);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // 📌 직원별 질문 대상 여부 조회 API
+    @GetMapping("/get-task-qstn")
+    public ResponseEntity<?> getemployeeTaskYn(@RequestParam(value = "emp_no", required = false) String empNo) {
+        try {
+            String taskYn = "";
+            List<Map<String, Object>> results = new ArrayList<>();
+            MapSqlParameterSource params = new MapSqlParameterSource();
+
+            params.addValue("empNo", empNo);
+            // TB_EMP 테이블에서 삭제되지 않은 직원을 조회
+            String query = "SELECT EMP_NO AS emp_no, EMP_NM AS emp_nm, IP AS ip " +
+                           "FROM TB_EMP " +
+                           "WHERE EMP_NO = :empNo " +
+                           " AND ( DEL_YN = 'N' OR DEL_YN = null )";
+            List<Map<String, Object>> empList = jdbcTemplate.queryForList(query, params);
+
+            if ( empList.size() > 0 ) { // 대상 직원이면
+                LocalDate todayLocalDate = LocalDate.now();
+                Date todayDate = new Date();
+                todayDate = Date.from(todayLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+                
+                query = "SELECT TASK.TASK_ID AS task_id "+
+                            " , TASK.TASK_NM AS task_nm "+
+                            " , TASK.TASK_TYPE AS task_type "+
+                            " , TASK.TASK_CN AS task_cn "+
+                            " , TASK.IMG_FLNM AS img_flnm "+
+                            " , TASK.RCRN_YN AS rcrn_yn "+
+                            " , TASK.RCRN_CYC_CD AS rcrn_cyc_cd "+
+                            " , TASK.PBLS_YN AS pbls_yn "+
+                            " , CTAD.APP_SEQ AS app_seq "+
+                            " , CTAD.TASK_APP_DT AS task_app_dt "+
+                        " FROM TB_COMP_TASK TASK, TB_COMP_TASK_APP_DT CTAD "+
+                        " WHERE TASK.TASK_ID = CTAD.TASK_ID "+
+                        " AND CTAD.TASK_APP_DT = :todayDate "+
+                        " AND (TASK.DEL_YN = 'N' OR TASK.DEL_YN = NULL) "+
+                        " AND (CTAD.DEL_YN = 'N' OR CTAD.DEL_YN = NULL)";
+                results = jdbcTemplate.queryForList(query, params);
+
+                for (Map<String, Object> result : results) {
+                    int task_id = (Integer) result.get("task_id");
+
+                    List<Map<String, Object>> qstnList = new ArrayList<>();
+                    MapSqlParameterSource qstnParams = new MapSqlParameterSource();
+
+                    qstnParams.addValue("task_id", task_id);
+                     query = "SELECT CTQ.TASK_ID AS task_id "+
+                                " , CTQ.QSTN_CD AS qstn_cd "+
+                                " , CQP.QSTN_NM AS qstn_nm "+
+                                " , CQP.QSTN_TYPE AS qstn_type "+
+                                " , CQP.QSTN_CN AS qstn_cn "+
+                                " , CQP.QSTN_STD_ANS_YN AS qstn_std_ans_yn "+
+                            " FROM TB_COMP_TASK_QSTN CTQ, TB_COMP_QSTN_POOL CQP "+
+                            " WHERE CTQ.TASK_ID = :task_id "+
+                            " AND (CTQ.DEL_YN = 'N' OR CTQ.DEL_YN = NULL) "+
+                            " AND CTQ.QSTN_CD = CQP.QSTN_CD "+
+                            " AND (CQP.DEL_YN = 'N' OR CQP.DEL_YN = NULL)";
+
+                    qstnList = jdbcTemplate.queryForList(query, qstnParams);   
+                    result.put("qstn_list",qstnList);
+
+                }
+                
+            }
+
+            return ResponseEntity.ok(results);
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
