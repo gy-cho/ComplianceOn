@@ -66,7 +66,7 @@ public class ComplianceController {
 
             // [검증 3] 중복 제출 방지 (동일 회차 및 사번 기준 완료 여부)
             String logCheckQuery = "SELECT EMP_NO FROM TB_COMP_EMP_ANS " +
-                    "WHERE TASK_ID = :taskId AND APP_SEQ = :appSeq AND EMP_NO = :empNo AND EMP_ANS_YN = 'Y'";
+                    "WHERE TASK_ID = :taskId AND APP_SEQ = :appSeq AND EMP_NO = :empNo ";
             MapSqlParameterSource logParams = new MapSqlParameterSource()
                     .addValue("taskId", data.getTask_id())
                     .addValue("appSeq", data.getApp_seq())
