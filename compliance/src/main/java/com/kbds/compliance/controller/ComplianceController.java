@@ -421,7 +421,7 @@ System.out.println("results ====>> "+results);
     public ResponseEntity<?> getComplianceTasks() {
         try {
             String query = "SELECT TASK_ID AS task_id, TASK_NM AS task_nm, TASK_TYPE AS task_type, " +
-                           "TASK_CN AS task_cn, RCRN_YN AS rcrn_yn, PBLS_YN AS pbls_yn " +
+                           "TASK_CN AS task_cn, IMG_FLNM as img_flnm, RCRN_YN AS rcrn_yn, PBLS_YN AS pbls_yn " +
                            "FROM TB_COMP_TASK WHERE DEL_YN = 'N' ORDER BY TASK_ID DESC";
 
             List<Map<String, Object>> taskList = jdbcTemplate.queryForList(query, new MapSqlParameterSource());
