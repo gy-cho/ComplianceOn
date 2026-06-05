@@ -185,7 +185,7 @@ def fetch_task_dates(task_id):
 def fetch_task_images():
     """서버로부터 TASK에 등록된 이미지 파일들의 URL 리스트를 가져옵니다."""
     try:
-        response = requests.get(f"{BASE_URL}/get-task-images", timeout=5)
+        response = requests.get(f"{BASE_URL}/get-img-pool", timeout=5)
         return response.json() if response.status_code == 200 else []
     except Exception:
         return []

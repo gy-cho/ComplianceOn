@@ -9,7 +9,8 @@ from api_utils import (
     update_compliance_task,
     delete_compliance_task,
     fetch_all_used_dates,
-    fetch_task_dates
+    fetch_task_dates,
+    fetch_task_images
 )
 from styles import KB_YELLOW, apply_task_management_style
 from common.toast import show_toast
@@ -150,7 +151,19 @@ def show_task_management_page():
             task_cn = ""
             selected_qstn_cds = []
             if task_type == "ETHICS":
-                task_cn = st.text_area("서약 내용", placeholder="임직원 강제 팝업용 서약 문구를 입력하세요.", height=180)
+                # 💡 [핵심 수정] text_area를 삭제하고, 이미지 API를 호출하여 무조건 하나를 선택하게 함
+                image_list = fetch_task_images()
+                
+                if image_list:
+                    # 리턴된 데이터 중 첫 번째 항목이 기본으로 강제 선택됩니다.
+                    # (주의: 백엔드 API의 실제 키 이름이 img_id, img_nm이 아니라면 맞게 수정해 주세요)
+                    selected_image_id = st.selectbox(
+                        "서약 내용 이미지 등록 (필수)", 
+                        options=[img['img_id'] for img in image_list],
+                        format_func=lambda x: next((img['img_nm'] for img in image_list if img['img_id'] == x), str(x))
+                    )
+                else:
+                    st.warning("서버에서 조회된 이미지 데이터가 없습니다.")
             elif task_type == "SELF_CHECK":
                 _, pool_data = fetch_question_pool()
                 options = [f"[{q['qstn_cd']}] {q['qstn_nm']} - {q['qstn_cn']}" for q in pool_data]
