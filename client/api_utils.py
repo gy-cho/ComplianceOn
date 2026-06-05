@@ -52,7 +52,10 @@ def fetch_emp_answers(task_id: int = None, app_seq: int = None):
             
             # 'Y'/'N' 혹은 True/False 값에 관계없이 안전하게 대시보드용 한글 문자열로 변환
             df["답변여부"] = df["답변여부"].map({'Y': '완료', True: '완료', 'N': '미완료', False: '미완료'}).fillna('미완료')
-            df["정상답변여부"] = df["정상답변여부"].map({'Y': '정상', True: '정상', 'N': '비정상', False: '비정상'}).fillna('비정상')
+            if df["답변여부"] is '완료':
+                df["정상답변여부"] = df["정상답변여부"].map({'Y': '정상', True: '정상', 'N': '비정상', False: '비정상'}).fillna('비정상')
+            else:
+                df["정상답변여부"] = '-'
             
             return df
         else:
