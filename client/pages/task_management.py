@@ -160,7 +160,7 @@ def show_task_management_page():
                     selected_image_id = st.selectbox(
                         "서약 내용 이미지 등록 (필수)", 
                         options=[img['img_id'] for img in image_list],
-                        format_func=lambda x: next((img['img_nm'] for img in image_list if img['img_id'] == x), str(x))
+                        format_func=lambda x: next((img['img_flnm'] for img in image_list if img['img_id'] == x), str(x))
                     )
                 else:
                     st.warning("서버에서 조회된 이미지 데이터가 없습니다.")
