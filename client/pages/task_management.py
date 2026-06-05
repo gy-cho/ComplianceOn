@@ -51,8 +51,8 @@ def show_task_management_page():
             
             if status_code == 200 and isinstance(task_list, list) and len(task_list) > 0:
                 df = pd.DataFrame(task_list)
-                df_view = df[["task_id", "task_nm", "task_type", "rcrn_yn", "pbls_yn"]].copy()
-                df_view.columns = ["TASK ID", "TASK명", "유형", "반복여부", "게시여부"]
+                df_view = df[["task_id", "task_nm", "task_type", "pbls_yn"]].copy()
+                df_view.columns = ["TASK ID", "TASK명", "유형", "게시여부"]
                 
                 # 💡 추가: 출력용 데이터프레임에서만 ETHICS를 윤리강령으로 치환
                 df_view["유형"] = df_view["유형"].replace({"ETHICS": "윤리강령"})
@@ -61,7 +61,7 @@ def show_task_management_page():
                 event = st.dataframe(
                     df_view, use_container_width=True, hide_index=True,
                     on_select="rerun", selection_mode="single-row",
-                    column_order=["TASK명", "유형", "반복여부", "게시여부"]
+                    column_order=["TASK명", "유형", "게시여부"]
                 )
                 
                 if event.selection and len(event.selection.rows) > 0:
@@ -90,7 +90,7 @@ def show_task_management_page():
             
             task_nm = st.text_input("TASK 명", placeholder="예: 2026년 하반기 정보보안 서약 관리")
             
-            c_col1, c_col2, c_col3 = st.columns(3)
+            c_col1, c_col2 = st.columns(2)
 
             with c_col1:
                 task_type = st.selectbox(
@@ -99,8 +99,6 @@ def show_task_management_page():
                     format_func=lambda x: next((item["name"] for item in selectData if item["id"] == x), x)
                 )
             with c_col2:
-                rcrn_yn = st.radio("정기 반복 여부", ["N", "Y"], horizontal=True)
-            with c_col3:
                 pbls_yn = st.radio("즉시 게시 여부", ["Y", "N"], horizontal=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
@@ -187,7 +185,7 @@ def show_task_management_page():
                     payload = {
                         "task_nm": task_nm, "task_type": task_type,
                         "task_cn": task_cn if task_type == "ETHICS" else None,
-                        "rcrn_yn": rcrn_yn,
+                        "rcrn_yn": "N",  # 확장성 고려 필드
                         "pbls_yn": pbls_yn,
                         "img_flnm": selected_image_id if task_type == "ETHICS" else None,
                         "selected_qstn_cds": selected_qstn_cds if task_type == "SELF_CHECK" else [],
@@ -218,16 +216,12 @@ def show_task_management_page():
             st.markdown('<div class="box-section-title">■ 기본 정보 및 정책 설정</div>', unsafe_allow_html=True)
             edit_nm = st.text_input("TASK 명", value=task_info.get("task_nm"))
             
-            d_col1, d_col2, d_col3 = st.columns(3)
+            d_col1, d_col2 = st.columns(2)
             with d_col1:
                 current_type = task_info.get("task_type")
                 display_type = next((item["name"] for item in selectData if item["id"] == current_type), current_type)
                 st.text_input("TASK 유형", value=display_type, disabled=True)
             with d_col2:
-                current_type = task_info.get("task_type")
-                display_type = next((item["name"] for item in selectData if item["id"] == current_type), current_type)
-                st.text_input("정기 반복 여부", value=task_info.get("rcrn_yn", "N"), disabled=True)
-            with d_col3:
                 edit_pbls = st.radio("게시 상태 전환", ["Y", "N"], index=0 if task_info.get("pbls_yn") == "Y" else 1, horizontal=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
