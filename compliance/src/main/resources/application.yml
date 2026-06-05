@@ -4,6 +4,8 @@ spring:
     username: postgres
     password: 'kbds1!'
     driver-class-name: org.postgresql.Driver
+  jackson:
+    time-zone: Asia/Seoul
 
 logging:
   level:
