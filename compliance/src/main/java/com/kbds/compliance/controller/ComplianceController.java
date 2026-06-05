@@ -297,6 +297,7 @@ public class ComplianceController {
                 LocalDate todayLocalDate = LocalDate.now();
                 String todayDate = todayLocalDate.toString();
                 params.addValue("todayDate", todayDate);
+                System.out.println("todayDate ====>> "+todayDate);
                 
                 query = "SELECT TASK.TASK_ID AS task_id "+
                             " , TASK.TASK_NM AS task_nm "+
@@ -340,7 +341,7 @@ public class ComplianceController {
                 }
                 
             }
-
+System.out.println("results ====>> "+results);
             return ResponseEntity.ok(results);
 
         } catch (Exception e) {
