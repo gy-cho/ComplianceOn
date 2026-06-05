@@ -145,7 +145,7 @@ public class ComplianceController {
                         " SELECT TP1.task_id "+
                             " , TP1.task_nm "+
                             " , TP1.APP_SEQ "+
-                            " , TP1.TASK_APP_DT "+
+                            " , TO_CHAR(TP1.TASK_APP_DT, 'YYYY-MM-DD') "+
                             " , TP1.emp_nm "+
                             " , TP1.emp_no "+
                             " , TP1.ip  "+
@@ -182,7 +182,7 @@ public class ComplianceController {
                         " SELECT TP1.task_id "+
                             " , TP1.task_nm "+
                             " , TP1.APP_SEQ "+
-                            " , TP1.TASK_APP_DT "+
+                            " , TO_CHAR(TP1.TASK_APP_DT, 'YYYY-MM-DD') "+
                             " , TP1.emp_nm "+
                             " , TP1.emp_no "+
                             " , TP1.ip  "+
@@ -215,7 +215,7 @@ public class ComplianceController {
                         " SELECT TP1.task_id "+
                             " , TP1.task_nm "+
                             " , TP1.APP_SEQ "+
-                            " , TP1.TASK_APP_DT "+
+                            " , TO_CHAR(TP1.TASK_APP_DT, 'YYYY-MM-DD') "+
                             " , TP1.emp_nm "+
                             " , TP1.emp_no "+
                             " , TP1.ip  "+
@@ -308,7 +308,7 @@ public class ComplianceController {
                             " , TASK.RCRN_CYC_CD AS rcrn_cyc_cd "+
                             " , TASK.PBLS_YN AS pbls_yn "+
                             " , CTAD.APP_SEQ AS app_seq "+
-                            " , CTAD.TASK_APP_DT AS task_app_dt "+
+                            " , TO_CHAR(CTAD.TASK_APP_DT, 'YYYY-MM-DD') AS task_app_dt "+
                         " FROM TB_COMP_TASK TASK, TB_COMP_TASK_APP_DT CTAD "+
                         " WHERE TASK.TASK_ID = CTAD.TASK_ID "+
                         " AND CTAD.TASK_APP_DT = TO_DATE(:todayDate, 'YYYY-MM-DD')"+
@@ -415,7 +415,7 @@ System.out.println("results ====>> "+results);
 
             query = " SELECT TASK.TASK_ID AS task_id "+
                             " , CTAD.APP_SEQ AS app_seq "+
-                            " , CTAD.TASK_APP_DT AS task_app_dt "+
+                            " , TO_CHAR(CTAD.TASK_APP_DT, 'YYYY-MM-DD') AS task_app_dt "+
                         " FROM TB_COMP_TASK TASK, TB_COMP_TASK_APP_DT CTAD "+
                         " WHERE TASK.DEL_YN = 'N' "+ 
                         " AND TASK.TASK_ID = CTAD.TASK_ID "+
