@@ -142,13 +142,13 @@ public class ComplianceController {
                             " WHERE TASK.TASK_ID = CTAD.TASK_ID "+
                             " ORDER BY TASK.TASK_ID, CTAD.TASK_APP_DT, EMP.EMP_NO "+
                         " ) "+
-                        " SELECT TP1.task_id "+
-                            " , TP1.task_nm "+
-                            " , TP1.APP_SEQ "+
-                            " , TO_CHAR(TP1.TASK_APP_DT, 'YYYY-MM-DD') "+
-                            " , TP1.emp_nm "+
-                            " , TP1.emp_no "+
-                            " , TP1.ip  "+
+                        " SELECT TP1.task_id as task_id "+
+                            " , TP1.task_nm as task_nm "+
+                            " , TP1.APP_SEQ as app_seq "+
+                            " , TO_CHAR(TP1.TASK_APP_DT, 'YYYY-MM-DD') as task_app_dt "+
+                            " , TP1.emp_nm as emp_nm"+
+                            " , TP1.emp_no as emp_no"+
+                            " , TP1.ip as ip "+
                             " , COALESCE(CTADEA.EMP_MAIN_ANS_YN, 'N') AS emp_main_ans_yn   "+
                             " , COALESCE(CTADEA.EMP_ANS_AGR_YN, 'N') AS emp_ans_agr_yn   "+
                             " , CTADEA.ANS_DT AS ans_dt  "+
@@ -179,13 +179,13 @@ public class ComplianceController {
                             " AND TASK.TASK_ID = CTAD.TASK_ID "+
                             " ORDER BY TASK.TASK_ID, CTAD.TASK_APP_DT, EMP.EMP_NO "+
                         " ) "+
-                        " SELECT TP1.task_id "+
-                            " , TP1.task_nm "+
-                            " , TP1.APP_SEQ "+
-                            " , TO_CHAR(TP1.TASK_APP_DT, 'YYYY-MM-DD') "+
-                            " , TP1.emp_nm "+
-                            " , TP1.emp_no "+
-                            " , TP1.ip  "+
+                        " SELECT TP1.task_id as task_id "+
+                            " , TP1.task_nm as task_nm "+
+                            " , TP1.APP_SEQ as app_seq "+
+                            " , TO_CHAR(TP1.TASK_APP_DT, 'YYYY-MM-DD') as task_app_dt "+
+                            " , TP1.emp_nm as emp_nm "+
+                            " , TP1.emp_no as emp_no "+
+                            " , TP1.ip as ip "+
                             " , COALESCE(CTADEA.EMP_MAIN_ANS_YN, 'N') AS emp_main_ans_yn   "+
                             " , COALESCE(CTADEA.EMP_ANS_AGR_YN, 'N') AS emp_ans_agr_yn   "+
                             " , CTADEA.ANS_DT AS ans_dt  "+
@@ -212,13 +212,13 @@ public class ComplianceController {
                             " AND CTAD.APP_SEQ = :appSeq "+
                             " ORDER BY TASK.TASK_ID, CTAD.TASK_APP_DT, EMP.EMP_NO "+
                         " ) "+
-                        " SELECT TP1.task_id "+
-                            " , TP1.task_nm "+
-                            " , TP1.APP_SEQ "+
-                            " , TO_CHAR(TP1.TASK_APP_DT, 'YYYY-MM-DD') "+
-                            " , TP1.emp_nm "+
-                            " , TP1.emp_no "+
-                            " , TP1.ip  "+
+                        " SELECT TP1.task_id as task_id "+
+                            " , TP1.task_nm as task_nm "+
+                            " , TP1.APP_SEQ as app_seq "+
+                            " , TO_CHAR(TP1.TASK_APP_DT, 'YYYY-MM-DD') as task_app_dt "+
+                            " , TP1.emp_nm as emp_nm"+
+                            " , TP1.emp_no as emp_no"+
+                            " , TP1.ip as ip "+
                             " , COALESCE(CTADEA.EMP_MAIN_ANS_YN, 'N') AS emp_main_ans_yn   "+
                             " , COALESCE(CTADEA.EMP_ANS_AGR_YN, 'N') AS emp_ans_agr_yn   "+
                             " , CTADEA.ANS_DT AS ans_dt  "+
