@@ -509,10 +509,13 @@ public class ComplianceController {
     @Transactional
     public ResponseEntity<?> createComplianceTask(@RequestBody Map<String, Object> payload) {
         try {
+            System.out.println("=============== payload create ================");
+            System.out.println(payload);
+
             String emp_no = (String) payload.get("emp_no");
             // 1. 마스터 Insert
             String taskQuery = "INSERT INTO TB_COMP_TASK (TASK_NM, TASK_TYPE, TASK_CN, RCRN_YN, PBLS_YN, DEL_YN, REG_EMP_NO) " +
-                               "VALUES (:task_nm, :task_type, :task_cn, :rcrn_yn, :pblc_yn, 'N', :emp_no) RETURNING TASK_ID";
+                               "VALUES (:task_nm, :task_type, :task_cn, :rcrn_yn, :pbls_yn, 'N', :emp_no) RETURNING TASK_ID";
             
             int taskId = jdbcTemplate.queryForObject(taskQuery, new MapSqlParameterSource(payload), Integer.class);
             
@@ -538,7 +541,8 @@ public class ComplianceController {
             }
             return ResponseEntity.ok(Map.of("status", "success"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
+            throw e;
+            //return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
         }
     }
 
@@ -548,7 +552,7 @@ public class ComplianceController {
     public ResponseEntity<?> updateComplianceTask(@RequestBody Map<String, Object> payload) {
         try {
 
-            System.out.println("=============== payload ================");
+            System.out.println("=============== payload update ================");
             System.out.println(payload);
 
             int task_id = (Integer) payload.get("task_id");
