@@ -23,8 +23,6 @@ def fetch_emp_answers(task_id: int = None, app_seq: int = None):
         
         if response.status_code == 200:
             data = response.json()
-
-            print(f"********** API fetch_emp_answers : {data}")
             
             # [방어 코드] 서버 에러 메시지 처리 및 빈 데이터 처리
             if not data or (isinstance(data, dict) and "error" in data):

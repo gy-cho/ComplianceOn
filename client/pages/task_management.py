@@ -174,7 +174,6 @@ def show_task_management_page():
         ctrl_col1, ctrl_col2, ctrl_space = st.columns([1.5, 1.5, 7])
         with ctrl_col1:
             if st.button("등록", type="primary", use_container_width=True):
-                print("test: ", selected_image_id)
                 if not task_nm.strip():
                     show_toast("error", "TASK 명을 입력해 주세요.")
                 elif not st.session_state.temp_app_dates:
@@ -280,7 +279,6 @@ def show_task_management_page():
 
             edit_cn = ""
             selected_image_id = None
-            print(f"********** 편집 화면 로드된 TASK 정보 : {task_info}")
             if task_info.get("task_type") == "ETHICS":
                 image_list = fetch_task_images()
                 
@@ -321,7 +319,6 @@ def show_task_management_page():
         b_col1, b_col2, b_col3, b_space = st.columns([1.5, 1.5, 1.5, 5.5])
         with b_col1:
             if st.button("저장", type="primary", use_container_width=True):
-                print("******************test: ", selected_image_id)
                 if not st.session_state.temp_app_dates:
                     show_toast("error", "최소 하나 이상의 적용 날짜가 유지되어야 합니다.")
                 elif not edit_nm.strip():
