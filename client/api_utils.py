@@ -34,9 +34,6 @@ def fetch_emp_answers(task_id: int = None, app_seq: int = None):
             
             df = pd.DataFrame(data)
 
-            if "task_app_dt" in df.columns:
-                df["task_app_dt"] = df["task_app_dt"].astype(str).str.split("T").str[0]
-
             if "emp_nm" in df.columns:
                 df["emp_nm"] = df["emp_nm"] + " (" + df["emp_no"].astype(str) + ")"
 

@@ -156,11 +156,10 @@ def show_task_management_page():
                 
                 if image_list:
                     # 리턴된 데이터 중 첫 번째 항목이 기본으로 강제 선택됩니다.
-                    # (주의: 백엔드 API의 실제 키 이름이 img_id, img_nm이 아니라면 맞게 수정해 주세요)
                     selected_image_id = st.selectbox(
                         "서약 내용 이미지 등록 (필수)", 
-                        options=[img['img_id'] for img in image_list],
-                        format_func=lambda x: next((img['img_flnm'] for img in image_list if img['img_id'] == x), str(x))
+                        options=[img['img_flnm'] for img in image_list],
+                        format_func=lambda x: next((img['img_flnm'] for img in image_list if img['img_flnm'] == x), str(x))
                     )
                 else:
                     st.warning("서버에서 조회된 이미지 데이터가 없습니다.")
@@ -175,19 +174,22 @@ def show_task_management_page():
         ctrl_col1, ctrl_col2, ctrl_space = st.columns([1.5, 1.5, 7])
         with ctrl_col1:
             if st.button("등록", type="primary", use_container_width=True):
+                print("test: ", selected_image_id)
                 if not task_nm.strip():
                     show_toast("error", "TASK 명을 입력해 주세요.")
                 elif not st.session_state.temp_app_dates:
                     show_toast("error", "최소 1개 이상의 적용 날짜를 추가하셔야 합니다.")
-                elif task_type == "ETHICS" and not task_cn.strip():
-                    show_toast("error", "서약 본문 내용을 입력해 주세요.")
+                elif task_type == "ETHICS" and not selected_image_id:
+                    show_toast("error", "서약 이미지를 선택해야 합니다.")
                 elif task_type == "SELF_CHECK" and not selected_qstn_cds:
                     show_toast("error", "최소 1개 이상의 질문 문항을 매핑해야 합니다.")
                 else:
                     payload = {
                         "task_nm": task_nm, "task_type": task_type,
                         "task_cn": task_cn if task_type == "ETHICS" else None,
-                        "rcrn_yn": rcrn_yn, "pbls_yn": pbls_yn,
+                        "rcrn_yn": rcrn_yn,
+                        "pbls_yn": pbls_yn,
+                        "img_flnm": selected_image_id if task_type == "ETHICS" else None,
                         "selected_qstn_cds": selected_qstn_cds if task_type == "SELF_CHECK" else [],
                         "app_dates": st.session_state.temp_app_dates,
                         # 실제 로그인한 사번이 필요
@@ -297,8 +299,8 @@ def show_task_management_page():
                     show_toast("error", "최소 하나 이상의 적용 날짜가 유지되어야 합니다.")
                 elif not edit_nm.strip():
                     show_toast("error", "TASK 명은 비워둘 수 없습니다.")
-                elif task_info.get("task_type") == "ETHICS" and not edit_cn.strip():
-                    show_toast("error", "서약 본문 내용은 비워둘 수 없습니다.")
+                elif task_type == "ETHICS" and not selected_image_id:
+                    show_toast("error", "서약 이미지를 선택해야 합니다.")
                 else:
                     payload = {
                         "task_id": int(task_info.get("task_id")),

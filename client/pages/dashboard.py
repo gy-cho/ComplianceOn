@@ -68,7 +68,7 @@ def show_dashboard_page():
                         seq_to_date = {0: "전체"} 
                         for item in app_dt_list:
                             raw_date = item.get("task_app_dt", "")
-                            clean_date = raw_date.split("T")[0] if "T" in raw_date else raw_date
+                            clean_date = raw_date
                             display_text = f"{clean_date} ({item['app_seq']}회차)"
                             seq_to_date[item["app_seq"]] = display_text
                         
