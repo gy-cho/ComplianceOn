@@ -94,7 +94,6 @@ def show_dashboard_page():
         return  
 
     df = fetch_emp_answers(task_id=selected_task_id, app_seq=selected_app_seq)
-    
     if not df.empty:
         total_count = len(df)
         done_count = len(df[df["답변여부"] == "완료"])

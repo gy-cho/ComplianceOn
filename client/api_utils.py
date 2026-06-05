@@ -39,7 +39,7 @@ def fetch_emp_answers(task_id: int = None, app_seq: int = None):
                 df["task_nm"] = df["task_nm"] + "(" + df["app_seq"].astype(str) + "회차)" + " - " + df["task_app_dt"].astype(str)
             
             # [안정성 보장] DB 테이블 컬럼 기준 매핑 키 체크 (JOIN된 사원 마스터 정보 포함 스펙 가정)
-            expected_keys = ["emp_nm", "task_nm", "ip", "emp_ans_yn", "emp_ans_agr_yn", "ans_dt"]
+            expected_keys = ["emp_nm", "task_nm", "ip", "emp_main_ans_yn", "emp_ans_agr_yn", "ans_dt"]
             for key in expected_keys:
                 if key not in df.columns:
                     df[key] = None
@@ -50,10 +50,9 @@ def fetch_emp_answers(task_id: int = None, app_seq: int = None):
             
             # 'Y'/'N' 혹은 True/False 값에 관계없이 안전하게 대시보드용 한글 문자열로 변환
             df["답변여부"] = df["답변여부"].map({'Y': '완료', True: '완료', 'N': '미완료', False: '미완료'}).fillna('미완료')
-            if df["답변여부"] is '완료':
-                df["정상답변여부"] = df["정상답변여부"].map({'Y': '정상', True: '정상', 'N': '비정상', False: '비정상'}).fillna('비정상')
-            else:
-                df["정상답변여부"] = '-'
+            
+            df["정상답변여부"] = df["정상답변여부"].map({'Y': '정상', True: '정상', 'N': '비정상', False: '비정상'}).fillna('비정상')
+            df.loc[df["답변여부"] != '완료', "정상답변여부"] = '-'
             
             return df
         else:
