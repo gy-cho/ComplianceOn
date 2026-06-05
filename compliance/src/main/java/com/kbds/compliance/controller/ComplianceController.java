@@ -153,6 +153,9 @@ public class ComplianceController {
                             " , TB_COMP_TASK_APP_DT CTAD "+
                             " , TB_EMP EMP "+
                             " WHERE TASK.TASK_ID = CTAD.TASK_ID "+
+                            "   AND (TASK.DEL_YN = 'N' OR TASK.DEL_YN = NULL) "+
+                            "   AND (CTAD.DEL_YN = 'N' OR CTAD.DEL_YN = NULL) "+
+                            "   AND (EMP.DEL_YN = 'N' OR EMP.DEL_YN = NULL) "+
                             " ORDER BY TASK.TASK_ID, CTAD.TASK_APP_DT, EMP.EMP_NO "+
                         " ) "+
                         " SELECT TP1.task_id as task_id "+
@@ -190,6 +193,9 @@ public class ComplianceController {
                             " , TB_EMP EMP "+
                             " WHERE TASK.TASK_ID = :taskId "+
                             " AND TASK.TASK_ID = CTAD.TASK_ID "+
+                            "   AND (TASK.DEL_YN = 'N' OR TASK.DEL_YN = NULL) "+
+                            "   AND (CTAD.DEL_YN = 'N' OR CTAD.DEL_YN = NULL) "+
+                            "   AND (EMP.DEL_YN = 'N' OR EMP.DEL_YN = NULL) "+
                             " ORDER BY TASK.TASK_ID, CTAD.TASK_APP_DT, EMP.EMP_NO "+
                         " ) "+
                         " SELECT TP1.task_id as task_id "+
@@ -223,6 +229,9 @@ public class ComplianceController {
                             " WHERE TASK.TASK_ID = :taskId "+
                             " AND TASK.TASK_ID = CTAD.TASK_ID "+
                             " AND CTAD.APP_SEQ = :appSeq "+
+                            "   AND (TASK.DEL_YN = 'N' OR TASK.DEL_YN = NULL) "+
+                            "   AND (CTAD.DEL_YN = 'N' OR CTAD.DEL_YN = NULL) "+
+                            "   AND (EMP.DEL_YN = 'N' OR EMP.DEL_YN = NULL) "+
                             " ORDER BY TASK.TASK_ID, CTAD.TASK_APP_DT, EMP.EMP_NO "+
                         " ) "+
                         " SELECT TP1.task_id as task_id "+
@@ -613,6 +622,7 @@ System.out.println("results ====>> "+results);
     }
 
     // 📌 6. TASK 소프트 삭제(Soft Delete) API
+
     @GetMapping("/get-img-pool")
     public ResponseEntity<?> getComplianceImgPool() {
         try {
