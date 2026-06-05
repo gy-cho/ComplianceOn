@@ -303,6 +303,7 @@ public class ComplianceController {
     @GetMapping("/get-task-qstn")
     public ResponseEntity<?> getemployeeTaskYn(@RequestParam(value = "emp_no", required = false) String empNo) {
         try {
+            
             String taskYn = "";
             List<Map<String, Object>> results = new ArrayList<>();
             MapSqlParameterSource params = new MapSqlParameterSource();
@@ -339,6 +340,19 @@ public class ComplianceController {
                 results = jdbcTemplate.queryForList(query, params);
 
                 for (Map<String, Object> result : results) {
+
+                    String logCheckQuery = "SELECT EMP_NO FROM TB_COMP_EMP_ANS " +
+                                        "WHERE TASK_ID = :taskId AND APP_SEQ = :appSeq AND EMP_NO = :empNo ";
+                    MapSqlParameterSource logParams = new MapSqlParameterSource()
+                            .addValue("taskId", result.get("task_id"))
+                            .addValue("appSeq", result.get("app_seq"))
+                            .addValue("empNo", result.get("emp_no"));
+                    List<Map<String, Object>> logs = jdbcTemplate.queryForList(logCheckQuery, logParams);
+
+                    if (!logs.isEmpty()) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse("이미 제출을 완료한 항목입니다."));
+                    }
+
                     int task_id = (Integer) result.get("task_id");
 
                     List<Map<String, Object>> qstnList = new ArrayList<>();
@@ -362,6 +376,8 @@ public class ComplianceController {
                 }
             }
 System.out.println("results ====>> "+results);
+
+
             return ResponseEntity.ok(results);
 
         } catch (Exception e) {
@@ -429,6 +445,7 @@ System.out.println("results ====>> "+results);
     @GetMapping("/get-compliance-tasks")
     public ResponseEntity<?> getComplianceTasks() {
         try {
+            
             String query = "SELECT TASK_ID AS task_id, TASK_NM AS task_nm, TASK_TYPE AS task_type, " +
                            "TASK_CN AS task_cn, IMG_FLNM as img_flnm, RCRN_YN AS rcrn_yn, PBLS_YN AS pbls_yn " +
                            "FROM TB_COMP_TASK WHERE DEL_YN = 'N' ORDER BY TASK_ID DESC";
