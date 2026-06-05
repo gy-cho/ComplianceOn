@@ -337,9 +337,7 @@ public class ComplianceController {
 
                     qstnList = jdbcTemplate.queryForList(query, qstnParams);   
                     result.put("qstn_list",qstnList);
-
                 }
-                
             }
 System.out.println("results ====>> "+results);
             return ResponseEntity.ok(results);
