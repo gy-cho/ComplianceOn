@@ -512,14 +512,14 @@ public class ComplianceController {
             System.out.println("=============== payload create ================");
             System.out.println(payload);
 
-            String emp_no = (String) payload.get("emp_no");
+            
             // 1. 마스터 Insert
             String taskQuery = "INSERT INTO TB_COMP_TASK (TASK_NM, TASK_TYPE, TASK_CN, RCRN_YN, PBLS_YN, DEL_YN, REG_EMP_NO) " +
                                "VALUES (:task_nm, :task_type, :task_cn, :rcrn_yn, :pbls_yn, 'N', :emp_no) RETURNING TASK_ID";
             
             int taskId = jdbcTemplate.queryForObject(taskQuery, new MapSqlParameterSource(payload), Integer.class);
+            String emp_no = (String) payload.get("emp_no");
             
-
             // 2. 질문 매핑 (기존 로직 유지)
             if ("SELF_CHECK".equals(payload.get("task_type")) && payload.get("selected_qstn_cds") != null) {
                 // ... 생략 (기존 질문 등록 batchUpdate 동일) ...
@@ -590,7 +590,28 @@ public class ComplianceController {
             String query = "UPDATE TB_COMP_TASK SET DEL_YN = 'Y', CHG_DTM = now() WHERE TASK_ID = :taskId";
             MapSqlParameterSource params = new MapSqlParameterSource("taskId", taskId);
             jdbcTemplate.update(query, params);
+
+            query = "UPDATE TB_COMP_TASK_APP_DT SET DEL_YN = 'Y', CHG_DTM = now() WHERE TASK_ID = :taskId";
+            jdbcTemplate.update(query, params);
+
             return ResponseEntity.ok(Map.of("status", "success"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // 📌 6. TASK 소프트 삭제(Soft Delete) API
+    @PostMapping("/get-img-pool")
+    public ResponseEntity<?> getComplianceImgPool() {
+        try {
+            String query = "SELECT IMG_ID AS img_id " +
+                                " , IMG_FLNM AS img_flnm " +
+                                " , IMG_TYPE AS img_type " +
+                            " FROM TB_COMP_IMG_POOL " +
+                            " WHERE (DEL_YN = 'N' OR DEL_YN = NULL) " +
+                            " ORDER BY IMG_ID";
+            List<Map<String, Object>> qstnPool = jdbcTemplate.queryForList(query, new MapSqlParameterSource());
+            return ResponseEntity.ok(qstnPool);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
         }
