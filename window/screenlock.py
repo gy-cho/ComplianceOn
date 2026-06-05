@@ -1,124 +1,289 @@
+import sys
+import os
+
+# =========================================================================
+# 💡 [리눅스 X11 폰트 버그 방어막 및 크래시 방지 우회]
+# =========================================================================
+IS_LINUX = sys.platform.startswith('linux')
+if IS_LINUX:
+    os.environ["QT_X11_NO_MITSHM"] = "1"
+    os.environ["GDK_CORE_DEVICE_EVENTS"] = "1"
+    UI_FONT = "fixed"  # 리눅스 테스트 환경용 비트맵 폰트
+else:
+    UI_FONT = "Malgun Gothic"
+
 import tkinter as tk
 import socket
 from tkinter import messagebox
 import requests
+from PIL import Image, ImageTk
+import ctypes
+from io import BytesIO
 
+# =========================================================================
+# 📌 [서버 및 환경 설정]
+# =========================================================================
+BASE_URL = "http://192.168.62.94:8080"
+
+# 📌 마스터 데이터 및 상태 인스턴스 정의
+emp_no_str = "D230057"        # 테스트 사번
+task_id_str = ""
+app_seq_str = ""
+emp_name_str = "홍길동"        
+date_str = "2026년 6월"
+task_type_str = ""           # API에서 받아올 현재 태스크 타입 보관
+
+# 자가점검(SELF_CHECK)용 유저 답변 저장 딕셔너리 {qstn_cd: "Y" 또는 "N"}
+user_answers = {}
+
+def fetch_task_and_init():
+    """프로그램 시작 시 서버에서 오늘의 태스크를 조회하고 타입에 맞는 화면을 띄우는 함수"""
+    global task_id_str, app_seq_str, task_type_str, tk_image, canvas
+    
+    results = []
+    get_task_url = f"{BASE_URL}/get-task-qstn?emp_no={emp_no_str}"
+    
+    try:
+        response = requests.get(get_task_url, timeout=3)
+        if response.status_code == 200:
+            results = response.json()
+        else:
+            raise Exception(f"API 응답 에러 (HTTP {response.status_code})")
+    except Exception as e:
+        messagebox.showerror("시스템 오류", f"서버와 통신할 수 없습니다.\n네트워크 상태를 확인해 주세요.\n\n에러: {e}")
+        root.destroy()
+        exit()
+        
+    if not results:
+        # 할당된 작업이 없는 상황도 비정상 구동으로 간주하고 안전 종료 처리
+        messagebox.showinfo("알림", "오늘 참여해야 할 준법 서약 또는 자가점검 내역이 없습니다.")
+        root.destroy()
+        exit()
+        
+    # 첫 번째 활성화된 태스크 정보 매핑
+    task_data = results[0]
+    task_id_str = str(task_data.get("task_id"))   
+    app_seq_str = str(task_data.get("app_seq"))   
+    task_type_str = task_data.get("task_type", "ETHICS")
+    
+    if task_type_str == "ETHICS":
+        draw_ethics_ui(task_data)
+    elif task_type_str == "SELF_CHECK":
+        draw_self_check_ui(task_data)
+
+
+# =========================================================================
+# 📌 [타입 A] 윤리강령 서약서 화면 
+# =========================================================================
+def draw_ethics_ui(task_data):
+    global tk_image, canvas
+    img_filename = task_data.get("img_flnm", "TEST_1.png")
+    image_url = f"{BASE_URL}/images/{img_filename}"
+    
+    try:
+        img_response = requests.get(image_url, timeout=3)
+        if img_response.status_code == 200:
+            bg_image = Image.open(BytesIO(img_response.content))
+        else: raise Exception()
+    except:
+        try: 
+            bg_image = Image.open("윤리강령_1.png")
+        except:
+            # 🌟 로컬 대체 이미지마저 로드 실패 시 무한 루프나 화면 먹통을 막기 위해 팝업 후 즉시 종료
+            messagebox.showerror("오류", "서약서 이미지를 서버 및 로컬에서 모두 가져올 수 없어 프로그램을 종료합니다.")
+            root.destroy()
+            exit()
+
+    new_width = int(bg_image.size[0] * (screen_height / bg_image.size[1]))
+    resized_image = bg_image.resize((new_width, screen_height), Image.Resampling.LANCZOS)
+    tk_image = ImageTk.PhotoImage(resized_image)
+
+    canvas = tk.Canvas(root, width=new_width, height=screen_height, bd=0, highlightthickness=0, bg='white')
+    canvas.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+    canvas.create_image(0, 0, anchor=tk.NW, image=tk_image)
+
+    setup_ethics_elements(new_width, screen_height)
+
+
+# =========================================================================
+# 📌 [타입 B] 자가점검 설문지 화면 (Modern 엔터프라이즈 스타일)
+# =========================================================================
+def draw_self_check_ui(task_data):
+    global canvas, submit_btn
+    
+    root.configure(background='#F5F7FA')
+    
+    box_width = int(screen_width * 0.65)
+    box_height = int(screen_height * 0.85)
+    
+    canvas = tk.Canvas(root, width=box_width, height=box_height, bd=0, highlightthickness=1, highlightbackground="#E4E7ED", bg='#FFFFFF')
+    canvas.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+    
+    # 상단 타이틀 영역
+    if IS_LINUX:
+        title_lbl = tk.Label(canvas, text=task_data.get("task_nm", "임직원 자가점검"), font=(UI_FONT, 18, "bold"), fg="#1F2D3D", bg="#FFFFFF")
+        canvas.create_window(box_width * 0.5, 45, window=title_lbl, anchor=tk.CENTER)
+        
+        sub_lbl = tk.Label(canvas, text="임직원의 안전한 업무 환경을 위해 하단 자가점검 항목에 성실히 답변 바랍니다.", font=(UI_FONT, 10), fg="#718096", bg="#FFFFFF")
+        canvas.create_window(box_width * 0.5, 85, window=sub_lbl, anchor=tk.CENTER)
+    else:
+        canvas.create_text(box_width * 0.5, 55, text=task_data.get("task_nm", "임직원 자가점검"), font=(UI_FONT, 22, "bold"), fill="#1F2D3D")
+        canvas.create_text(box_width * 0.5, 95, text="임직원의 안전한 업무 환경을 위해 하단 자가점검 항목에 성실히 답변 바랍니다.", font=(UI_FONT, 11), fill="#718096")
+    
+    canvas.create_line(40, 130, box_width - 40, 130, fill="#E2E8F0", width=2)
+    
+    qstn_list = task_data.get("qstn_list", [])
+    start_y = 170
+    y_gap = 120  
+    
+    # 문항 리스트 바인딩 및 라벨 가공
+    for idx, qstn in enumerate(qstn_list):
+        q_cd = qstn.get("qstn_cd")
+        q_title = qstn.get("qstn_nm")
+        q_content = qstn.get("qstn_cn") 
+        
+        current_y = start_y + (idx * y_gap)
+        
+        lbl_num = tk.Label(canvas, text=f"문항 {idx+1:02d}", font=(UI_FONT, 10, "bold"), fg="#3182CE", bg="#FFFFFF")
+        canvas.create_window(55, current_y, window=lbl_num, anchor=tk.W)
+        
+        lbl_title = tk.Label(canvas, text=q_title, font=(UI_FONT, 12, "bold"), fg="#2D3748", bg="#FFFFFF")
+        canvas.create_window(125, current_y, window=lbl_title, anchor=tk.W)
+        
+        lbl_content = tk.Label(canvas, text=q_content, font=(UI_FONT, 10), fg="#4A5568", bg="#FFFFFF", justify=tk.LEFT)
+        canvas.create_window(55, current_y + 35, window=lbl_content, anchor=tk.W)
+        
+        user_answers[q_cd] = tk.StringVar(value="")
+        
+        r_yes = tk.Radiobutton(
+            canvas, text=" 예 (Yes)", variable=user_answers[q_cd], value="Y", 
+            bg="white", activebackground="white", selectcolor="white",
+            font=(UI_FONT, 11, "bold"), fg="#2D3748", activeforeground="#3182CE",
+            command=check_self_check_complete
+        )
+        r_no = tk.Radiobutton(
+            canvas, text=" 아니오 (No)", variable=user_answers[q_cd], value="N", 
+            bg="white", activebackground="white", selectcolor="white",
+            font=(UI_FONT, 11, "bold"), fg="#E53E3E", activeforeground="#E53E3E",
+            command=check_self_check_complete
+        )
+        
+        canvas.create_window(box_width - 240, current_y + 15, window=r_yes, anchor=tk.W)
+        canvas.create_window(box_width - 130, current_y + 15, window=r_no, anchor=tk.W)
+        
+        canvas.create_line(40, current_y + 75, box_width - 40, current_y + 75, fill="#EDF2F7", width=1)
+
+    # 최종 제출 버튼
+    submit_btn = tk.Button(
+        canvas, text="점검 완료 및 서약 데이터 전송", command=on_agree, state=tk.DISABLED,
+        font=(UI_FONT, 12, "bold"), bg="#E2E8F0", fg="#A0AEC0", 
+        width=32, height=1, relief=tk.FLAT, bd=0, cursor="hand2"
+    )
+    canvas.create_window(box_width * 0.5, box_height - 65, window=submit_btn, anchor=tk.CENTER)
+
+
+def check_self_check_complete():
+    """자가점검 항목 중 누락된 답변이 없는지 체크하여 버튼을 활성화하는 함수"""
+    all_answered = True
+    for val in user_answers.values():
+        if val.get() == "":  
+            all_answered = False
+            break
+            
+    if all_answered:
+        submit_btn.config(state=tk.NORMAL, bg="#2B6CB0", fg="#FFFFFF", relief=tk.RAISED) 
+    else:
+        submit_btn.config(state=tk.DISABLED, bg="#E2E8F0", fg="#A0AEC0", relief=tk.FLAT)
+
+
+# =========================================================================
+# 📌 [오류 발생 시 프로세스 강제 종료 로직 전면 보완 적용 구역]
+# =========================================================================
 def on_agree():
-# 1. 서버로 보낼 데이터 준비
-    url = "http://127.0.0.1:8000/submit-consent"  # 나중에 미니PC IP로 변경
-    # 1. 호스트 이름과 IP 주소 추출
-    hostname = socket.gethostname()
-    internal_ip = socket.gethostbyname(hostname)
-
-    # 2. 페이로드 구성
+    submit_url = f"{BASE_URL}/submit-compliance" 
+    
     payload = {
-        "emp_no": "2026002",
-        "emp_name": "홍길동",
-        "pc_name": hostname,
-        "user_ip": internal_ip  # 👈 여기에 추출한 IP를 쏙 넣어줍니다!
+        "task_id": int(task_id_str) if task_id_str.isdigit() else None,        
+        "app_seq": int(app_seq_str) if app_seq_str.isdigit() else None,        
+        "emp_no": emp_no_str,
+        "emp_main_ans_yn": "Y",  
+        "emp_ans_agr_yn": "Y",   
+        "answers": []
     }
 
+    if task_type_str == "SELF_CHECK":
+        payload["answers"] = [
+            {"qstn_cd": q_cd, "emp_ans_yn": var.get()} for q_cd, var in user_answers.items()
+        ]
+    else:
+        payload["answers"] = []
+
     try:
-        # 2. 서버로 동의 내역 전송 (타임아웃 3초 설정)
-        response = requests.post(url, json=payload, timeout=3)
-        
-        # 3. 전송 결과에 따른 처리
+        response = requests.post(submit_url, json=payload, timeout=3)
         if response.status_code == 200:
             res_data = response.json()
-            # 서버에서 보내준 메세지를 그대로 팝업에 노출
-            messagebox.showinfo("알림", res_data["message"])
-            root.destroy()  # 성공했을 때만 창 닫기
-        elif response.status_code == 409:
+            messagebox.showinfo("알림", res_data.get("message", "준법 프로그램 수행 기록이 정상적으로 저장되었습니다."))
+            root.destroy()
+            exit()
+        # 🌟 서버 측 검증 에러 및 500 내부 에러 발생 시 처리
+        elif response.status_code in [400, 404, 500]:
             res_data = response.json()
-            # 서버에서 보내준 메세지를 그대로 팝업에 노출
-            messagebox.showinfo("알림", res_data["message"])
-            root.destroy()  # 성공했을 때만 창 닫기
+            messagebox.showwarning("제출 실패", f"서버가 처리를 거부했습니다.\n\n사유: {res_data.get('message', '알 수 없는 요류')}")
+            root.destroy()  # 💡 팝업창 확인 누른 후 프로그램 자동 폭파
+            exit()
         else:
-            messagebox.showerror("오류", f"서버 응답 에러: {response.status_code}\n전산팀에 문의하세요.")
-            
-    except requests.exceptions.RequestException as e:
-        # 서버가 꺼져있거나 네트워크 연결이 안 될 경우
-        messagebox.showerror("네트워크 오류", "서버와 통신할 수 없습니다.\n네트워크 상태를 확인해 주세요.")
-        print(f"Error: {e}")
+            messagebox.showerror("오류", f"정의되지 않은 서버 응답 에러가 발생했습니다.\nStatus Code: {response.status_code}")
+            root.destroy()
+            exit()
+    except Exception as e:
+        # 🌟 전송 중 타임아웃, 사내 서브넷 끊김 등 세션 유실 예외 처리
+        messagebox.showerror("네트워크 오류", f"서버에 서약 데이터를 전송하지 못했습니다.\n네트워크 연결 상태를 재확인해 주세요.\n\n에러: {e}")
+        root.destroy()  # 💡 팝업창 확인 누른 후 프로그램 자동 폭파
+        exit()
 
-def check():
-    # 체크박스 상태에 따라 버튼 활성화/비활성화
-    if agreement_var.get():
-        submit_btn.config(state=tk.NORMAL, bg="#004C98", fg="white") # 활성화 시 색상 변경
-    else:
-        submit_btn.config(state=tk.DISABLED, bg="#cccccc")
+
+def setup_ethics_elements(width, height):
+    """기존 윤리강령 화면 렌더링용 서브 컴포넌트 설정"""
+    global submit_btn, agreement_var
+    TARGET_X = width * 0.50
+    agreement_var = tk.IntVar()
+    
+    check_btn = tk.Checkbutton(
+        canvas, text="본인은 상기의 '윤리강령' 내용을 확인하였으며, 이를 준수할 것을 다짐합니다.", 
+        variable=agreement_var, command=check_ethics_complete, font=(UI_FONT, 12, "bold"),
+        bg="#F4F4F2", activebackground="#F4F4F2", bd=0
+    )
+    canvas.create_window(TARGET_X, height * 0.83, window=check_btn, anchor=tk.CENTER)
+    canvas.create_text(TARGET_X, height * 0.86, text=date_str, font=(UI_FONT, 12, "bold"), fill="#333333", anchor=tk.CENTER)
+    canvas.create_text(TARGET_X, height * 0.88, text=f"직원번호 : {emp_no_str}       서명 : {emp_name_str}", font=(UI_FONT, 12, "bold"), fill="#333333", anchor=tk.CENTER)
+
+    submit_btn = tk.Button(
+        canvas, text="확인 및 업무 시작", command=on_agree, state=tk.DISABLED,
+        font=(UI_FONT, 12, "bold"), bg="#cccccc", fg="white", width=24, height=1, relief=tk.SOLID, bd=1
+    )
+    canvas.create_window(TARGET_X, height * 0.92, window=submit_btn, anchor=tk.CENTER)
+
+def check_ethics_complete():
+    if agreement_var.get(): submit_btn.config(state=tk.NORMAL, bg="#FFBC00", fg="#111111")
+    else: submit_btn.config(state=tk.DISABLED, bg="#cccccc", fg="white")
+
+
+# =========================================================================
+# 시스템 윈도우 생성 및 메인루프 기동
+# =========================================================================
+try: ctypes.windll.shcore.SetProcessDpiAwareness(1)
+except: pass
 
 root = tk.Tk()
 root.title("사내 준법 서약 시스템")
-
-# 1. 전체 화면 설정
 root.attributes("-fullscreen", True)
-root.attributes("-topmost", True)  # 항상 최상단 노출
-root.configure(background='white') # 바탕색 흰색
-
-# 2. 닫기 버튼(X) 및 Alt+F4 무력화 (동의 버튼으로만 종료 가능)
+root.attributes("-topmost", True)
+root.configure(background='black') 
 root.protocol("WM_DELETE_WINDOW", lambda: None)
 
-# 화면 중앙 배치를 위한 프레임
-frame = tk.Frame(root, bg="white")
-frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+screen_width = root.winfo_screenwidth()
+screen_height = root.winfo_screenheight()
 
-# 디자인 구성 요소
-title_label = tk.Label(
-    frame, 
-    text="준법 및 보안 준수 서약서", 
-    font=("Malgun Gothic", 24, "bold"), 
-    bg="white", 
-    fg="#333333"
-)
-title_label.pack(pady=(0, 20))
-
-# 서약 내용 (간략 예시)
-content_text = (
-    "1. 본인은 회사의 보안 규정을 철저히 준수하겠습니다.\n"
-    "2. 사내 정보를 외부에 유출하지 않으며, 승인되지 않은 SW를 사용하지 않겠습니다.\n"
-    "3. 준법 교육 내용을 숙지하였으며 이를 위반 시 책임을 지겠습니다."
-)
-content_label = tk.Label(
-    frame, 
-    text=content_text, 
-    font=("Malgun Gothic", 12), 
-    bg="#f5f5f5", 
-    justify=tk.LEFT, 
-    padx=20, 
-    pady=20,
-    wraplength=600
-)
-content_label.pack(pady=20)
-
-# 3. 체크박스 및 동의 버튼 디자인
-agreement_var = tk.IntVar()
-check_btn = tk.Checkbutton(
-    frame, 
-    text="위 내용을 모두 숙지하였으며 이에 동의합니다.", 
-    variable=agreement_var, 
-    command=check,
-    font=("Malgun Gothic", 11),
-    bg="white",
-    activebackground="white"
-)
-check_btn.pack(pady=10)
-
-submit_btn = tk.Button(
-    frame, 
-    text="확인 및 업무 시작", 
-    command=on_agree, 
-    state=tk.DISABLED, # 기본값은 비활성화
-    font=("Malgun Gothic", 12, "bold"),
-    bg="#cccccc", 
-    fg="white",
-    width=20,
-    height=2,
-    relief=tk.FLAT
-)
-submit_btn.pack(pady=20)
-
-# (테스트용) Esc 키를 누르면 종료되도록 설정 (실제 배포 시에는 삭제하세요)
+root.after(100, fetch_task_and_init)
 root.bind("<Escape>", lambda e: root.destroy())
-
 root.mainloop()
