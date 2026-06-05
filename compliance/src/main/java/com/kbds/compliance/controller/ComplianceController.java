@@ -80,8 +80,21 @@ public class ComplianceController {
             LocalDateTime now = LocalDateTime.now();
             String taskType = (String) task.get("TASK_TYPE");
 
+
             // [핵심 로직] 정규화 구조에 맞춘 로우 단위 적재
-            String insertQuery = "INSERT INTO TB_COMP_EMP_ANS (EMP_NO, TASK_ID, APP_SEQ, QSTN_CD, ANS_DT, EMP_ANS_YN, DEL_YN, REG_EMP_NO) " +
+            String insertQuery = "INSERT INTO TB_COMP_TASK_APP_DT_EMP_ANS (TASK_ID, APP_SEQ, EMP_NO, EMP_MAIN_ANS_YN, EMP_ANS_AGR_YN, ANS_DT, DEL_YN, REG_EMP_NO) " +
+                    "VALUES (:taskId, :appSeq, :empNo, :empMainAnsYn, :empAnsAgrYn, :ansDt, 'N', :regEmpNo)";
+            MapSqlParameterSource insertAnsParams = new MapSqlParameterSource()
+                        .addValue("taskId", data.getTask_id())
+                        .addValue("appSeq", data.getApp_seq())
+                        .addValue("empNo", data.getEmp_no())
+                        .addValue("empMainAnsYn", data.getEmp_main_ans_yn())
+                        .addValue("empAnsAgrYn", data.getEmp_ans_agr_yn())
+                        .addValue("ansDt", now)
+                        .addValue("regEmpNo", data.getEmp_no());
+            jdbcTemplate.update(insertQuery, insertAnsParams);
+
+            insertQuery = "INSERT INTO TB_COMP_EMP_ANS (EMP_NO, TASK_ID, APP_SEQ, QSTN_CD, ANS_DT, EMP_ANS_YN, DEL_YN, REG_EMP_NO) " +
                     "VALUES (:empNo, :taskId, :appSeq, :qstnCd, :ansDt, :empAnsYn, 'N', :regEmpNo)";
 
             if ("ETHICS".equals(taskType) && (data.getAnswers() == null || data.getAnswers().isEmpty())) {

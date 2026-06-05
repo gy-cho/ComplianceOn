@@ -10,5 +10,7 @@ public class SubmitComplianceRequest {
     private Long task_id;
     private Integer app_seq; // 회차 순번 필수 추가
     private String emp_no;   // user_id -> emp_no 변경
+    private String emp_main_ans_yn;
+    private String emp_ans_agr_yn;
     private List<AnswerItem> answers;
 }
