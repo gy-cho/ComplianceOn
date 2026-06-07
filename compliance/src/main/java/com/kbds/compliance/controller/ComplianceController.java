@@ -560,7 +560,16 @@ System.out.println("results ====>> "+results);
             
             // 2. 질문 매핑 (기존 로직 유지)
             if ("SELF_CHECK".equals(payload.get("task_type")) && payload.get("selected_qstn_cds") != null) {
-                // ... 생략 (기존 질문 등록 batchUpdate 동일) ...
+                List<String> selected_qstn_cds = (List<String>) payload.get("selected_qstn_cds");
+                if (!selected_qstn_cds.isEmpty()) {
+                    String qstnQuery = "INSERT INTO TB_COMP_TASK_QSTN (TASK_ID, QSTN_CD, DEL_YN, REG_EMP_NO) " +
+                                     "VALUES (:taskId, :selected_qstn_cds, 'N', :empNo)";
+                    List<Map<String, Object>> batchValues = new ArrayList<>();
+                    for (String selectedQstnCd : selected_qstn_cds) {
+                        batchValues.add(Map.of("taskId", taskId, "selected_qstn_cds", selectedQstnCd, "empNo", emp_no));
+                    }
+                    jdbcTemplate.batchUpdate(qstnQuery, batchValues.toArray(new Map[0]));
+                }
             }
 
             // 3. 다중 적용일 등록 (APP_SEQ는 1부터 순차 생성)
@@ -613,6 +622,24 @@ System.out.println("results ====>> "+results);
                 String dtQuery = "INSERT INTO TB_COMP_TASK_APP_DT (TASK_ID, APP_SEQ, TASK_APP_DT, DEL_YN, REG_EMP_NO) VALUES (:task_id, :appSeq, TO_DATE(:appDt, 'YYYY-MM-DD'), 'N', :emp_no)";
                 jdbcTemplate.batchUpdate(dtQuery, batchValues.toArray(new Map[0]));
             }
+
+            // 3. 질문 매핑 데이터 일괄 삭제 후 재등록 (또는 변경분 갱신) - 일단 질문은 수정 불가
+            /*
+            jdbcTemplate.update("DELETE FROM TB_COMP_TASK_QSTN WHERE TASK_ID = :task_id", new MapSqlParameterSource("task_id", task_id));
+            
+            if ("SELF_CHECK".equals(payload.get("task_type")) && payload.get("selected_qstn_cds") != null) {
+                List<String> selected_qstn_cds = (List<String>) payload.get("selected_qstn_cds");
+                if (!selected_qstn_cds.isEmpty()) {
+                    String dtQuery = "INSERT INTO TB_COMP_TASK_QSTN (TASK_ID, QSTN_CD, DEL_YN, REG_EMP_NO) " +
+                                     "VALUES (:taskId, :selectedQstnCds, 'N', :empNo)";
+                    List<Map<String, Object>> batchValues = new ArrayList<>();
+                    for (String dt : selected_qstn_cds) {
+                        batchValues.add(Map.of("taskId", task_id, "selectedQstnCds", selected_qstn_cds, "empNo", emp_no));
+                    }
+                    jdbcTemplate.batchUpdate(dtQuery, batchValues.toArray(new Map[0]));
+                }
+            }
+            */
 
             return ResponseEntity.ok(Map.of("status", "success"));
         } catch (Exception e) {
