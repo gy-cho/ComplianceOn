@@ -691,14 +691,21 @@ System.out.println("results ====>> "+results);
         try {
             // 🌟 테이블명 TB_COMP_EMP_ANS 및 약칭 CEA 반영 완료
             // 💡 컬럼명(QSTN_NM, QSTN_CN 등)은 실제 CEA 테이블에 정의된 명칭에 맞게 필요시 살짝 튜닝해 주세요.
-            String query = "SELECT CEA.QSTN_NM AS qstn_nm " +
-                                " , CEA.QSTN_CN AS qstn_cn " +
+            String query = "SELECT CEA.TASK_ID as task_id "+
+                                " , CEA.APP_SEQ as app_seq "+
+                                " , CQP.QSTN_NM AS qstn_nm " +
+                                " , CQP.QSTN_CN AS qstn_cn " +
                                 " , COALESCE(CEA.EMP_ANS_YN, 'N') AS emp_ans_yn " +
                                 " , CEA.QSTN_STD_ANS_YN AS qstn_std_ans_yn " +
-                            " FROM TB_COMP_EMP_ANS CEA " + 
+                                " , EMP.EMP_NO emp_no " +
+                                " , EMP.EMP_NM emp_nm " +
+                                " , EMP.IP ip " +
+                            " FROM TB_COMP_EMP_ANS CEA, TB_COMP_QSTN_POOL CQP, TB_EMP EMP " + 
                             " WHERE CEA.TASK_ID = :taskId " +
                             "   AND CEA.APP_SEQ = :appSeq " +
                             "   AND CEA.EMP_NO = :empNo " +
+                            "   AND CQP.QSTN_CD = CEA.QSTN_CD" +
+                            "   AND CEA.EMP_NO = EMP.EMP_NO" +
                             " ORDER BY CEA.QSTN_ID ASC"; // QSTN_ID 컬럼이 없다면 일시(ANS_DT) 등으로 정렬 변경 가능
 
             // NamedParameterJdbcTemplate 파라미터 매핑
