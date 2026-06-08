@@ -706,7 +706,7 @@ System.out.println("results ====>> "+results);
                             "   AND CEA.EMP_NO = :empNo " +
                             "   AND CQP.QSTN_CD = CEA.QSTN_CD" +
                             "   AND CEA.EMP_NO = EMP.EMP_NO" +
-                            " ORDER BY CEA.QSTN_ID ASC"; // QSTN_ID 컬럼이 없다면 일시(ANS_DT) 등으로 정렬 변경 가능
+                            " ORDER BY CEA.QSTN_CD ASC"; 
 
             // NamedParameterJdbcTemplate 파라미터 매핑
             MapSqlParameterSource params = new MapSqlParameterSource()
