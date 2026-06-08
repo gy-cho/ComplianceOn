@@ -93,24 +93,31 @@ def show_dashboard_page():
     if selected_task_id == 0 or selected_app_seq is None:
         return  
 
-    df = fetch_emp_answers(task_id=selected_task_id, app_seq=selected_app_seq)
-    if not df.empty:
-        total_count = len(df)
-        done_count = len(df[df["답변여부"] == "완료"])
-        pending_count = len(df[df["답변여부"] == "미완료"])
+    # 🌟 api_utils로부터 순수 원본 뼈대 데이터프레임을 받아옵니다.
+    raw_df = fetch_emp_answers(task_id=selected_task_id, app_seq=selected_app_seq)
+    
+    if raw_df is not None and not raw_df.empty:
+        # 🌟 [통계 집계]: 화면단에서 순수 필드 데이터 기반으로 수치 연산 수행
+        total_count = len(raw_df)
+        done_count = len(raw_df[raw_df["emp_main_ans_yn"].isin(["Y", True])])
+        pending_count = len(raw_df[raw_df["emp_main_ans_yn"].isin(["N", False])])
+        
         today = datetime.now().strftime('%Y-%m-%d')
-        today_done = len(df[(df["답변여부"] == "완료") & (df['답변일시'].fillna('').str.contains(today, na=False))])
+        # ans_dt가 null일 경우 방어 처리하며 오늘 완료자 계산
+        today_done = len(raw_df[
+            (raw_df["emp_main_ans_yn"].isin(["Y", True])) & 
+            (raw_df['ans_dt'].fillna('').str.contains(today, na=False))
+        ])
 
         if "status_filter" not in st.session_state:
             st.session_state.status_filter = "전체"
 
         # --------------------------------------------------------------------------------
-        # [박스 2]: [대시보드 통계] 영역 (오버레이 CSS 삭제, 명확한 일반 버튼으로 교체)
+        # [박스 2]: [대시보드 통계] 영역 (기존 오버레이 CSS 및 디자인 스펙 100% 동일)
         # --------------------------------------------------------------------------------
         with st.container():
             m_col1, m_col2, m_col3 = st.columns(3, gap="small")
             
-            # 💡 [핵심 CSS]: 복잡한 효과를 모두 빼고 카드와 버튼 사이의 간격만 깔끔하게 잡아줍니다.
             card_style = """
             <style>
                 .metric-card {
@@ -127,7 +134,6 @@ def show_dashboard_page():
             st.markdown(card_style, unsafe_allow_html=True)
 
             with m_col1:
-                # 1. 눈에 보이는 카드 렌더링
                 st.markdown(f"""
                     <div class="metric-card">
                         <div style="color: #666; font-size: 14px; font-weight: 600;">대상자 총원</div>
@@ -135,11 +141,10 @@ def show_dashboard_page():
                         <div style="color: #999; font-size: 12px; margin-top: 5px;">DB 등록 기준</div>
                     </div>
                 """, unsafe_allow_html=True)
-                # 2. 기능을 수행하는 명확한 버튼 노출
+                # 🌟 콜백 연동 아규먼트를 화면 필터 코드 규칙과 매핑 ("전체")
                 st.button("전체 대상자 보기", key="click_all", use_container_width=True, on_click=update_status_filter, args=("전체",))
 
             with m_col2:
-                # 1. 눈에 보이는 카드 렌더링
                 st.markdown(f"""
                     <div class="metric-card">
                         <div style="color: #666; font-size: 14px; font-weight: 600;">답변 완료</div>
@@ -147,11 +152,10 @@ def show_dashboard_page():
                         <div style="color: #4CAF50; font-size: 12px; margin-top: 5px;">(오늘 +{today_done}명 완료)</div>
                     </div>
                 """, unsafe_allow_html=True)
-                # 2. 기능을 수행하는 명확한 버튼 노출
+                # 🌟 콜백 연동 아규먼트를 화면 필터 코드 규칙과 매핑 ("완료")
                 st.button("답변 완료자 보기", key="click_done", use_container_width=True, on_click=update_status_filter, args=("완료",))
 
             with m_col3:
-                # 1. 눈에 보이는 카드 렌더링
                 st.markdown(f"""
                     <div class="metric-card">
                         <div style="color: #666; font-size: 14px; font-weight: 600;">미답변(진행중)</div>
@@ -159,7 +163,7 @@ def show_dashboard_page():
                         <div style="color: #999; font-size: 12px; margin-top: 5px;">미답변자 {pending_count}명</div>
                     </div>
                 """, unsafe_allow_html=True)
-                # 2. 기능을 수행하는 명확한 버튼 노출
+                # 🌟 콜백 연동 아규먼트를 화면 필터 코드 규칙과 매핑 ("미완료")
                 st.button("미답변자 보기", key="click_pending", use_container_width=True, on_click=update_status_filter, args=("미완료",))
 
 
@@ -173,7 +177,7 @@ def show_dashboard_page():
             with col_search:
                 search = st.text_input("검색", placeholder="이름, 사원번호 입력", label_visibility="collapsed")
             with col_filter:
-                # key를 지정하여 세션 상태와 Selectbox UI를 동기화
+                # 🌟 Selectbox UI 동기화 옵션 값을 기존 한글 구조인 ["전체", "완료", "미완료"] 그대로 유지
                 status_filter = st.selectbox(
                     "필터", 
                     ["전체", "완료", "미완료"], 
@@ -181,22 +185,61 @@ def show_dashboard_page():
                     label_visibility="collapsed"
                 )
             
-            f_df = df.copy()
+            f_df = raw_df.copy()
             
+            # 🌟 필터링 조건 분기 (원본 데이터 상태에 매칭)
             if status_filter != "전체":
-                f_df = f_df[f_df["답변여부"] == status_filter]                
+                target_code = "Y" if status_filter == "완료" else "N"
+                f_df = f_df[f_df["emp_main_ans_yn"].isin([target_code, True if target_code == "Y" else False])]                
             
+            # 이름(emp_nm) 혹은 사번(emp_no) 유연하게 다중 타겟 텍스트 와일드카드 필터링 적용
             if search:
-                f_df = f_df[f_df['이름'].astype(str).str.contains(search)]
+                f_df = f_df[
+                    f_df['emp_nm'].astype(str).str.contains(search) | 
+                    f_df['emp_no'].astype(str).str.contains(search)
+                ]
 
             st.markdown('<div style="margin-top: 10px;"></div>', unsafe_allow_html=True)
+            
+            # 🌟 [최종 화면단 포맷팅 파이프라인 수립 구역]
+            display_df = pd.DataFrame()
+            
+            if not f_df.empty:
+                # 1. 이름 (사번) 가로 병합 처리
+                display_df["이름"] = f_df["emp_nm"].astype(str) + " (" + f_df["emp_no"].astype(str) + ")"
+                
+                # 2. 준법명 명칭 조립 및 방어 코드 적용
+                task_name = f_df["task_nm"].astype(str) if "task_nm" in f_df.columns else "준법 항목"
+                app_seq_val = f_df["app_seq"].astype(str) if "app_seq" in f_df.columns else "-"
+                app_dt_val = f_df["task_app_dt"].astype(str) if "task_app_dt" in f_df.columns else "-"
+                display_df["준법명"] = task_name + "(" + app_seq_val + "회차) - " + app_dt_val
+                
+                # 3. IP 정보 매핑
+                display_df["IP"] = f_df["ip"] if "ip" in f_df.columns else "-"
+                
+                # 4. 답변여부 한글 치환 고도화 (불리언 및 코드값 완전 수용)
+                display_df["답변여부"] = f_df["emp_main_ans_yn"].map({'Y': '완료', True: '완료', 'N': '미완료', False: '미완료'}).fillna('미완료')
+                
+                # 5. 정상답변여부 한글 치환 고도화 및 미완료자 하이픈 처리
+                display_df["정상답변여부"] = f_df["emp_ans_agr_yn"].map({'Y': '정상', True: '정상', 'N': '비정상', False: '비정상'}).fillna('비정상')
+                display_df.loc[display_df["답변여부"] != '완료', "정상답변여부"] = '-'
+                
+                # 6. 완료 일시 바인딩
+                display_df["답변일시"] = f_df["ans_dt"] if "ans_dt" in f_df.columns else "-"
+                
+                # 기존 렌더링 명칭 및 정렬 순서 그대로 칼럼 동기화
+                display_df = display_df[["이름", "준법명", "IP", "답변여부", "정상답변여부", "답변일시"]]
+            else:
+                # 검색 데이터가 전혀 없을 때 빈 헤더 그리드 유지를 위한 빈 뼈대 생성
+                display_df = pd.DataFrame(columns=["이름", "준법명", "IP", "답변여부", "정상답변여부", "답변일시"])
+
             st.data_editor(
-                f_df,
+                display_df,
                 hide_index=True,
                 use_container_width=True,
                 column_config={
                         "이름": st.column_config.Column(width="medium"),
-                        "사원번호": st.column_config.Column(width="medium"),
+                        "사원번호": st.column_config.Column(width="medium"), # 기존 스펙 유지 보완
                         "IP": st.column_config.Column(width="medium"),
                         "답변여부": st.column_config.Column(width="small"),
                         "답변일시": st.column_config.Column(width="medium"),

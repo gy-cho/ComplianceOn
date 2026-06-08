@@ -1,14 +1,14 @@
 import pandas as pd
 import requests
 import streamlit as st
+import json
 
 BASE_URL = "http://192.168.62.94:8080"
 # BASE_URL = "http://127.0.0.1:8080"
-
 def fetch_emp_answers(task_id: int = None, app_seq: int = None):
     """
-    서버로부터 직원별 답변(TB_COMP_EMP_ANS) 로그 데이터를 가져와서,
-    대시보드 UI용 구조인 ['사원명', '사원번호', 'IP', '답변여부', '답변일시'] 프레임으로 매핑하여 반환합니다.
+    서버로부터 직원별 답변(TB_COMP_EMP_ANS) 로그 데이터를 가져와서
+    가공 없이 순수 데이터프레임 구조 그대로 반환합니다.
     """
     url = f"{BASE_URL}/get-all-answers"
     
@@ -24,44 +24,22 @@ def fetch_emp_answers(task_id: int = None, app_seq: int = None):
         if response.status_code == 200:
             data = response.json()
             
-            # [방어 코드] 서버 에러 메시지 처리 및 빈 데이터 처리
+            # [방어 코드] 빈 데이터나 에러 발생 시 빈 데이터프레임 리턴
             if not data or (isinstance(data, dict) and "error" in data):
                 if isinstance(data, dict) and "error" in data:
                     st.error(f"서버 내부 오류: {data['error']}")
-                return pd.DataFrame(columns=["이름", "준법명", "IP", "답변여부", "정상답변여부", "답변일시"])
+                return pd.DataFrame()
             
-            df = pd.DataFrame(data)
-
-            if "emp_nm" in df.columns:
-                df["emp_nm"] = df["emp_nm"] + " (" + df["emp_no"].astype(str) + ")"
-
-            if "task_nm" in df.columns:
-                df["task_nm"] = df["task_nm"] + "(" + df["app_seq"].astype(str) + "회차)" + " - " + df["task_app_dt"].astype(str)
+            # 🌟 백엔드에서 받은 컬럼 순정 상태 그대로 데이터프레임 생성하여 즉시 반환
+            return pd.DataFrame(data)
             
-            # [안정성 보장] DB 테이블 컬럼 기준 매핑 키 체크 (JOIN된 사원 마스터 정보 포함 스펙 가정)
-            expected_keys = ["emp_nm", "task_nm", "ip", "emp_main_ans_yn", "emp_ans_agr_yn", "ans_dt"]
-            for key in expected_keys:
-                if key not in df.columns:
-                    df[key] = None
-            
-            # 필요한 컬럼만 추출 및 한글 치환
-            df = df[expected_keys]
-            df.columns = ["이름", "준법명", "IP", "답변여부", "정상답변여부", "답변일시"]
-            
-            # 'Y'/'N' 혹은 True/False 값에 관계없이 안전하게 대시보드용 한글 문자열로 변환
-            df["답변여부"] = df["답변여부"].map({'Y': '완료', True: '완료', 'N': '미완료', False: '미완료'}).fillna('미완료')
-            
-            df["정상답변여부"] = df["정상답변여부"].map({'Y': '정상', True: '정상', 'N': '비정상', False: '비정상'}).fillna('비정상')
-            df.loc[df["답변여부"] != '완료', "정상답변여부"] = '-'
-            
-            return df
         else:
             st.error(f"서버 응답 실패 (Status Code: {response.status_code})")
-            return pd.DataFrame(columns=["이름", "준법명", "IP", "답변여부", "정상답변여부", "답변일시"])
+            return pd.DataFrame()
             
     except Exception as e:
         st.error(f"서버 연결 오류: {e}")
-        return pd.DataFrame(columns=["이름", "준법명", "IP", "답변여부", "정상답변여부", "답변일시"])
+        return pd.DataFrame()
 
 
 # employee_management.py 내부 통신 스크립트가 정상 동작합니다.
