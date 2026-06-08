@@ -696,7 +696,6 @@ System.out.println("results ====>> "+results);
                                 " , CQP.QSTN_NM AS qstn_nm " +
                                 " , CQP.QSTN_CN AS qstn_cn " +
                                 " , COALESCE(CEA.EMP_ANS_YN, 'N') AS emp_ans_yn " +
-                                " , CEA.QSTN_STD_ANS_YN AS qstn_std_ans_yn " +
                                 " , EMP.EMP_NO emp_no " +
                                 " , EMP.EMP_NM emp_nm " +
                                 " , EMP.IP ip " +
