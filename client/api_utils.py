@@ -164,3 +164,21 @@ def fetch_task_images():
         return response.json() if response.status_code == 200 else []
     except Exception:
         return []
+
+def fetch_emp_detail_answers(task_id: int, app_seq: int, emp_no: str):
+    """
+    서버로부터 특정 직원의 회차별 질문 및 상세 답변 내역을 가져옵니다.
+    """
+    url = f"{BASE_URL}/get-emp-detail-answers"
+    params = {
+        "task_id": task_id,
+        "app_seq": app_seq,
+        "emp_no": emp_no
+    }
+    
+    try:
+        response = requests.get(url, params=params, timeout=5)
+        # 성공 시 서버에서 내려준 JSON 배열(List)을 반환하고, 실패 시 빈 리스트를 반환합니다.
+        return response.json() if response.status_code == 200 else []
+    except Exception:
+        return []

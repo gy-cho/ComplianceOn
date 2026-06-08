@@ -666,7 +666,6 @@ System.out.println("results ====>> "+results);
     }
 
     // 📌 6. TASK 소프트 삭제(Soft Delete) API
-
     @GetMapping("/get-img-pool")
     public ResponseEntity<?> getComplianceImgPool() {
         try {
@@ -680,6 +679,41 @@ System.out.println("results ====>> "+results);
             return ResponseEntity.ok(qstnPool);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // 📌 특정 직원의 회차별 질문 및 상세 답변 내역 조회 API
+    @GetMapping("/get-emp-detail-answers")
+    public ResponseEntity<?> getEmpDetailAnswers(
+            @RequestParam("task_id") int taskId,
+            @RequestParam("app_seq") int appSeq,
+            @RequestParam("emp_no") String empNo) {
+        try {
+            // 🌟 테이블명 TB_COMP_EMP_ANS 및 약칭 CEA 반영 완료
+            // 💡 컬럼명(QSTN_NM, QSTN_CN 등)은 실제 CEA 테이블에 정의된 명칭에 맞게 필요시 살짝 튜닝해 주세요.
+            String query = "SELECT CEA.QSTN_NM AS qstn_nm " +
+                                " , CEA.QSTN_CN AS qstn_cn " +
+                                " , COALESCE(CEA.EMP_ANS_YN, 'N') AS emp_ans_yn " +
+                                " , CEA.QSTN_STD_ANS_YN AS qstn_std_ans_yn " +
+                            " FROM TB_COMP_EMP_ANS CEA " + 
+                            " WHERE CEA.TASK_ID = :taskId " +
+                            "   AND CEA.APP_SEQ = :appSeq " +
+                            "   AND CEA.EMP_NO = :empNo " +
+                            " ORDER BY CEA.QSTN_ID ASC"; // QSTN_ID 컬럼이 없다면 일시(ANS_DT) 등으로 정렬 변경 가능
+
+            // NamedParameterJdbcTemplate 파라미터 매핑
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("taskId", taskId)
+                    .addValue("appSeq", appSeq)
+                    .addValue("empNo", empNo);
+
+            // 기존 이미지 풀 소스코드와 동일한 방식으로 실행
+            List<Map<String, Object>> detailAnswers = jdbcTemplate.queryForList(query, params);
+            
+            return ResponseEntity.ok(detailAnswers);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", e.getMessage()));
         }
     }
 }
