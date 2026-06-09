@@ -6,7 +6,7 @@ from datetime import datetime
 from api_utils import fetch_emp_answers, fetch_compliance_tasks, fetch_emp_detail_answers
 from styles import KB_YELLOW, apply_dashboard_style
 from common.toast import show_toast
-from pages.detail_popup import show_emp_detail_popup
+from pages.detail_page import show_emp_detail_page # 상세 페이지 import
 
 # =========================================================================
 # 💡 하단 필터 상태를 변경하는 콜백 함수 (버튼 클릭 시 동작)
@@ -15,6 +15,14 @@ def update_status_filter(new_status):
     st.session_state.status_filter = new_status
 
 def show_dashboard_page():
+    # 🌟 페이지 전환을 위한 상태 초기화
+    if "current_page" not in st.session_state:
+        st.session_state.current_page = "main"
+
+    # 🌟 상세 페이지로 전환 시 해당 함수 호출
+    if st.session_state.current_page == "detail":
+        show_emp_detail_page()
+        return
         
     apply_dashboard_style()
 
@@ -218,19 +226,14 @@ def show_dashboard_page():
             else:
                 display_df = pd.DataFrame(columns=["이름", "준법명", "IP", "답변여부", "정상답변여부", "답변일시"])
 
-            # 💡 [핵심 수정] 이전 버전 호환을 위해 on_select="rerun"으로 변경합니다.
-            # 행을 선택하면 앱이 자동으로 rerun되며 세션에 선택 상태가 기록됩니다.
             st.dataframe(
                 display_df,
                 hide_index=True,
                 use_container_width=True,
-                on_select="rerun",  # 텍스트 형태의 트리거 설정
+                on_select="rerun",
                 key="df_selection"
             )
 
-            
-            
-            # 💡 [구조 변경] 테이블 선택 상태 감지 리스너
             selection = st.session_state.get("df_selection")
             
             if selection and "rows" in selection["selection"] and selection["selection"]["rows"]:
@@ -239,28 +242,22 @@ def show_dashboard_page():
                 if selected_idx < len(f_df):
                     target_row = f_df.iloc[selected_idx]
                     emp_no = str(target_row["emp_no"])
+                    ans_yn = str(target_row["emp_main_ans_yn"]) 
                     
-                    # 현재 선택된 사번이 기존과 다를 때만 팝업을 실행합니다.
-                    if st.session_state.get("last_logged_emp_no") != emp_no:
-                        st.session_state.last_logged_emp_no = emp_no # 락 걸기
-                        
-                        detail_log = fetch_emp_detail_answers(
-                            task_id=target_row.get("task_id", selected_task_id), 
-                            app_seq=target_row.get("app_seq", selected_app_seq), 
-                            emp_no=emp_no
-                        )
-                        
-                        if detail_log:
-                            show_emp_detail_popup(
-                                detail_data=detail_log,
-                                emp_nm=str(target_row.get("emp_nm", "Unknown")),
-                                emp_no=emp_no
-                            )
-                        else:
-                            show_toast("error", "데이터 조회에 실패했습니다.")
+                    if ans_yn in ["Y", "True", True]:
+                        # 🌟 페이지 전환을 위해 파라미터 저장 후 current_page 변경
+                        st.session_state.detail_params = {
+                            "task_id": target_row.get("task_id", selected_task_id),
+                            "app_seq": target_row.get("app_seq", selected_app_seq),
+                            "emp_no": emp_no,
+                            "emp_nm": str(target_row.get("emp_nm", "Unknown"))
+                        }
+                        st.session_state.current_page = "detail"
+                        st.rerun()
+                    else:
+                        show_toast("info", "해당 사원은 아직 답변을 완료하지 않았습니다.")
+                        st.session_state.last_logged_emp_no = None
             else:
-                # 🌟 [핵심] 사용자가 테이블의 선택을 해제했거나 아무것도 선택하지 않은 상태라면
-                # 사번 락을 자동으로 풀어주어, 다음에 똑같은 사람을 다시 누를 수 있게 만듭니다.
                 st.session_state.last_logged_emp_no = None
 
             st.markdown('</div>', unsafe_allow_html=True)
