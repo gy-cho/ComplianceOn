@@ -1,3 +1,4 @@
+import sys
 import tkinter as tk
 from tkinter import messagebox
 import requests
@@ -76,7 +77,7 @@ def draw_ethics_ui(task_data):
             bg_image = Image.open("TEST_1.png")
         except:
             root.destroy()
-            exit()
+            sys.exit()
 
     new_width = int(bg_image.size[0] * (screen_height / bg_image.size[1]))
     resized_image = bg_image.resize((new_width, screen_height), Image.Resampling.LANCZOS)
@@ -102,7 +103,7 @@ def draw_self_check_ui(task_data):
     except Exception as e:
         messagebox.showerror("오류", f"자가점검 배경 이미지(img_self_check_bg.png)를 찾을 수 없습니다.\n에러: {e}")
         root.destroy()
-        exit()
+        sys.exit()
         
     box_height = int(screen_height * 0.95) 
     box_width = int(bg_image.size[0] * (box_height / bg_image.size[1]))
@@ -270,20 +271,20 @@ def on_agree():
             res_data = response.json()
             messagebox.showinfo("알림", res_data.get("message", "준법 프로그램 수행 기록이 정상적으로 저장되었습니다."))
             root.destroy()
-            exit()
+            sys.exit()
         elif response.status_code in [400, 404, 500]:
             res_data = response.json()
             messagebox.showwarning("제출 실패", f"{res_data.get('message', '알 수 없는 오류')}")
             root.destroy()
-            exit()
+            sys.exit()
         else:
             messagebox.showerror("오류", f"정의되지 않은 서버 응답 에러가 발생했습니다.\nStatus Code: {response.status_code}")
             root.destroy()
-            exit()
+            sys.exit()
     except Exception as e:
         messagebox.showerror("네트워크 오류", f"서버에 서약 데이터를 전송하지 못했습니다.\n네트워크 연결 상태를 재확인해 주세요.\n\n에러: {e}")
         root.destroy()
-        exit()
+        sys.exit()
 
 
 def setup_ethics_elements(width, height):
@@ -386,7 +387,7 @@ if auth_id:
 else :
     print("사번 가져오기 실패!")
     root.destroy()
-    exit()
+    sys.exit()
 
 # 2. 화면 크기를 구합니다
 screen_width = root.winfo_screenwidth()
@@ -398,7 +399,7 @@ task_data = fetch_task_and_init()
 # 4. 데이터가 없으면 즉시 종료
 if task_data is None:
     root.destroy()
-    exit()
+    sys.exit()
 
 # 5. 데이터가 있을 때만 화면을 표시하고 설정을 적용합니다
 root.deiconify() # 🌟 숨겨져 있던 창을 화면에 나타냅니다
