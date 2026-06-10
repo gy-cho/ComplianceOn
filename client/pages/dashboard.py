@@ -31,13 +31,13 @@ def show_dashboard_page():
         st.session_state.last_logged_emp_no = None
 
     # [타이틀 영역] 상단 새로고침 버튼 레이아웃 구조 정렬
-    title_col, empty_col, btn_col1 = st.columns([2, 6.3, 0.8])
+    title_col, btn_col1 = st.columns([8, 2])
     
     with title_col:
         st.markdown('<div class="page-title">현황 조회</div>', unsafe_allow_html=True)
         
     with btn_col1:
-        if st.button("", icon=":material/refresh:", help="새로고침", use_container_width=True):
+        if st.button("새로고침", icon=":material/refresh:"):
             show_toast("success", "데이터가 새로고침 되었습니다!")
             st.session_state.last_logged_emp_no = None
             st.rerun()
@@ -170,7 +170,6 @@ def show_dashboard_page():
                     <div class="metric-card">
                         <div style="color: #666; font-size: 14px; font-weight: 600;">미답변(진행중)</div>
                         <div style="color: #FF4B4B; font-size: 24px; font-weight: bold; margin-top: 5px;">{pending_count} 명</div>
-                        <div style="color: #999; font-size: 12px; margin-top: 5px;">미답변자 {pending_count}명</div>
                     </div>
                 """, unsafe_allow_html=True)
                 st.button("미답변자 보기", key="click_pending", use_container_width=True, on_click=update_status_filter, args=("미완료",))

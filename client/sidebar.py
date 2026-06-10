@@ -16,20 +16,22 @@ def draw_sidebar(cookies=None):
                     padding-left: 15px !important;
                 }
                 
-                /* 로그아웃 버튼 영역을 사이드바 맨 바닥에 고정시키는 컨테이너 스펙 */
-                .sidebar-footer {
-                    position: fixed;
+                /* 로그아웃 버튼 하단 고정을 위해 마커 바로 뒤의 버튼 컨테이너를 타겟팅 */
+                section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.sidebar-logout-marker) {
+                    display: none !important;
+                }
+                section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.sidebar-logout-marker) + div[data-testid="stElementContainer"] {
+                    position: absolute;
                     bottom: 20px;
-                    left: 20px;
-                    width: calc(244px - 40px); /* 사이드바 기본 너비에 맞춘 여백 계산 */
-                    z-index: 999;
+                    inset-inline: 10px;
+                    width: auto;
                 }
             </style>
         """, unsafe_allow_html=True)
 
         # 상단 로고 영역
         try:
-            st.image("assets/kbds_logo.png", use_container_width=True)
+            st.image("assets/kbds_logo.png", use_container_width=False)
         except:
             st.markdown("### KBDS Compliance")
         st.divider()
@@ -39,6 +41,9 @@ def draw_sidebar(cookies=None):
         # -------------------------------------------------------------------------
         if st.button("📊 현황 조회", use_container_width=True): 
             st.session_state.menu = "현황 조회"
+            st.session_state.current_page = "main"
+            if "df_selection" in st.session_state:
+                del st.session_state.df_selection
             st.rerun()
 
         if st.button("📁 직원 관리", use_container_width=True): 
@@ -58,24 +63,21 @@ def draw_sidebar(cookies=None):
         # 공백 컴포넌트로 간격을 벌려주어 일반 메뉴와 겹침을 방지합니다.
         st.markdown("<br><br><br>", unsafe_allow_html=True)
         
-        with st.container():
-            # HTML 구조를 빌려 바닥 고정 스타일을 감싸줍니다.
-            st.markdown('<div class="sidebar-footer">', unsafe_allow_html=True)
+        # 마커 컴포넌트 삽입 (CSS에서 이 마커의 다음 형제 요소를 bottom 고정함)
+        st.markdown('<span class="sidebar-logout-marker"></span>', unsafe_allow_html=True)
             
-            if st.button("🔐로그아웃", use_container_width=True, help="클릭 시 로그인 화면으로 돌아갑니다."):
-                # 1. 쿠키 초기화 및 저장
-                if cookies is not None:
-                    cookies["logged_in"] = "False"
-                    cookies["username"] = ""
-                    cookies.save()
+        if st.button("🔐로그아웃", use_container_width=True, help="클릭 시 로그인 화면으로 돌아갑니다."):
+            # 1. 쿠키 초기화 및 저장
+            if cookies is not None:
+                cookies["logged_in"] = "False"
+                cookies["username"] = ""
+                cookies.save()
+            
+            # 2. 스트림릿 세션 상태 초기화 및 튕겨내기
+            st.session_state["logged_in"] = False
+            if "username" in st.session_state:
+                del st.session_state["username"]
                 
-                # 2. 스트림릿 세션 상태 초기화 및 튕겨내기
-                st.session_state["logged_in"] = False
-                if "username" in st.session_state:
-                    del st.session_state["username"]
-                    
-                # 기본 정렬 메뉴 리셋
-                st.session_state.menu = "현황 조회"
-                st.rerun()
-                
-            st.markdown('</div>', unsafe_allow_html=True)
+            # 기본 정렬 메뉴 리셋
+            st.session_state.menu = "현황 조회"
+            st.rerun()
