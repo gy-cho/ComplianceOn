@@ -34,7 +34,7 @@ def show_dashboard_page():
     title_col, empty_col, btn_col1 = st.columns([2, 6.3, 0.8])
     
     with title_col:
-        st.markdown('<div class="page-title">현황조회</div>', unsafe_allow_html=True)
+        st.markdown('<div class="page-title">현황 조회</div>', unsafe_allow_html=True)
         
     with btn_col1:
         if st.button("", icon=":material/refresh:", help="새로고침", use_container_width=True):

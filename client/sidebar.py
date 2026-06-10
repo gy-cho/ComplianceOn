@@ -45,8 +45,8 @@ def draw_sidebar(cookies=None):
             st.session_state.menu = "직원 관리"
             st.rerun()
 
-        if st.button("📈 콘텐츠 관리", use_container_width=True): 
-            st.session_state.menu = "콘텐츠 관리"
+        if st.button("📈 준법 TASK", use_container_width=True): 
+            st.session_state.menu = "준법 TASK"
             st.session_state.task_page_mode = "list"
             st.session_state.selected_task_data = None
             st.session_state.temp_app_dates = []

@@ -36,7 +36,7 @@ def show_task_management_page():
     if st.session_state.task_page_mode == "list":
         title_col, empty_col, btn_col = st.columns([2, 6.3, 0.8])
         with title_col:
-            st.markdown('<div class="page-title">준법 TASK 목록</div>', unsafe_allow_html=True)
+            st.markdown('<div class="page-title">준법 TASK</div>', unsafe_allow_html=True)
         with btn_col:
             if st.button("등록", use_container_width=True, type="primary"):
                 st.session_state.temp_app_dates = []  
@@ -82,7 +82,7 @@ def show_task_management_page():
     # 2. TASK 등록 화면
     # =========================================================================
     elif st.session_state.task_page_mode == "create":
-        st.markdown('<div class="page-title">새 준법 TASK 등록</div>', unsafe_allow_html=True)
+        st.markdown('<div class="page-title">준법 TASK 등록</div>', unsafe_allow_html=True)
         
         with st.container():
             st.markdown('<div class="card-content-v2">', unsafe_allow_html=True)
