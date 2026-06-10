@@ -1,0 +1,11 @@
+# Node.js 관련
+node_modules/
+dist/
+build/
+*.log
+.env
+.DS_Store
+
+# Electron 및 OS 관련
+.vscode/
+package-lock.json

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>준법 프로그램</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- 로딩 오버레이: 데이터 조회 전 표시 -->
+  <div id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p>데이터를 조회하는 중입니다...</p>
+  </div>
+
+  <!-- 메인 컨테이너: 조회 성공 후 표시 -->
+  <div id="app-container" style="display:none;"></div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
