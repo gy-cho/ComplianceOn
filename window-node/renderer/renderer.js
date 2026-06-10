@@ -7,62 +7,37 @@ const BASE_URL = 'http://192.168.62.94:8080';
 // =========================================================================
 // 전역 상태
 // =========================================================================
-let empNoStr = '';
-let taskIdStr = '';
-let appSeqStr = '';
-let empNameStr = '홍길동';
-let dateStr = '2026년 6월';
+let empNoStr    = '';
+let taskIdStr   = '';
+let appSeqStr   = '';
+let empNameStr  = '홍길동';
+let dateStr     = '2026년 6월';
 let taskTypeStr = '';
 
-// 자가점검용 데이터
-let userAnswers = {};       // { qstn_cd: 'Y' | 'N' | '' }
-let standardAnswers = {};   // { qstn_cd: 'Y' | 'N' }
+let userAnswers    = {};
+let standardAnswers = {};
+let currentTaskData = null;
 
 // =========================================================================
 // 유틸리티
 // =========================================================================
-function terminateProgram() {
-  window.electronAPI.terminate();
-}
-
-function showLoading(visible) {
-  document.getElementById('loading-overlay').style.display = visible ? 'flex' : 'none';
-}
-
-function showApp(visible) {
-  document.getElementById('app-container').style.display = visible ? 'flex' : 'none';
-}
+function terminateProgram() { window.electronAPI.terminate(); }
+function showLoading(v)     { document.getElementById('loading-overlay').style.display = v ? 'flex' : 'none'; }
+function showApp(v)         { document.getElementById('app-container').style.display   = v ? 'flex' : 'none'; }
 
 // =========================================================================
-// 서버 통신: 태스크 조회
+// 공통: contain 방식 이미지 피팅 계산
+//  - 이미지 비율 유지, 한 축이 윈도우에 꽉 참, 상하 또는 좌우 여백 없음
 // =========================================================================
-async function fetchTaskAndInit() {
-  const url = `${BASE_URL}/get-task-qstn?emp_no=${empNoStr}`;
-
-  try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(3000) });
-    if (!response.ok) return null;
-
-    const results = await response.json();
-    if (!results || results.length === 0) return null;
-
-    const taskData = results[0];
-    taskIdStr = String(taskData.task_id ?? '');
-    appSeqStr = String(taskData.app_seq ?? '');
-    taskTypeStr = taskData.task_type || 'ETHICS';
-
-    // 자가점검 표준 응답 캐싱
-    if (taskTypeStr === 'SELF_CHECK' && Array.isArray(taskData.qstn_list)) {
-      for (const qstn of taskData.qstn_list) {
-        standardAnswers[qstn.qstn_cd] = qstn.qstn_std_ans_yn || 'Y';
-      }
-    }
-
-    return taskData;
-  } catch (e) {
-    console.error('태스크 조회 실패:', e);
-    return null;
-  }
+function calcImageFit(naturalW, naturalH) {
+  const winW  = window.innerWidth;
+  const winH  = window.innerHeight;
+  const scale = Math.min(winW / naturalW, winH / naturalH);
+  const renderW = Math.round(naturalW * scale);
+  const renderH = Math.round(naturalH * scale);
+  const offsetX = Math.round((winW  - renderW) / 2);
+  const offsetY = Math.round((winH  - renderH) / 2);
+  return { scale, renderW, renderH, offsetX, offsetY };
 }
 
 // =========================================================================
@@ -74,30 +49,27 @@ async function drawEthicsUI(taskData) {
   container.style.background = '#ffffff';
 
   const imgFilename = taskData.img_flnm || 'TEST_1.png';
-  const imageUrl = `${BASE_URL}/images/${imgFilename}`;
+  const imageUrl    = `${BASE_URL}/images/${imgFilename}`;
 
-  // wrapper
   const wrapper = document.createElement('div');
   wrapper.id = 'ethics-wrapper';
+  wrapper.style.cssText = 'position:relative;width:100vw;height:100vh;overflow:hidden;';
 
-  // 배경 이미지 엘리먼트
   const bgImg = document.createElement('img');
-  bgImg.id = 'ethics-bg-img';
+  bgImg.id  = 'ethics-bg-img';
   bgImg.alt = '윤리강령';
+  bgImg.style.cssText = `
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    max-width:100%; max-height:100%;
+    width:auto; height:auto; display:block;
+  `;
 
-  // 이미지 로드 후 오버레이 세팅
-  bgImg.onload = () => {
-    setupEthicsElements(wrapper, bgImg);
-  };
-
+  bgImg.onload  = () => setupEthicsElements(wrapper, bgImg);
   bgImg.onerror = () => {
-    // 서버 이미지 실패 시 로컬 파일로 폴백
-    bgImg.src = 'TEST_1.png';
-    bgImg.onerror = () => {
-      terminateProgram();
-    };
+    bgImg.src     = 'TEST_1.png';
+    bgImg.onerror = () => terminateProgram();
   };
-
   bgImg.src = imageUrl;
 
   wrapper.appendChild(bgImg);
@@ -105,93 +77,83 @@ async function drawEthicsUI(taskData) {
 }
 
 function setupEthicsElements(wrapper, bgImg) {
-  // 기존 오버레이 제거 후 재생성
-  const existingOverlay = wrapper.querySelector('#ethics-overlay');
-  if (existingOverlay) existingOverlay.remove();
+  const ex = wrapper.querySelector('#ethics-overlay');
+  if (ex) ex.remove();
 
-  const imgH = bgImg.clientHeight;
-  const imgTop = bgImg.getBoundingClientRect().top - wrapper.getBoundingClientRect().top;
+  const { scale, renderW, renderH, offsetX, offsetY } = calcImageFit(bgImg.naturalWidth, bgImg.naturalHeight);
 
-  // 오버레이 컨테이너
+  // 오버레이: 이미지 실제 렌더 영역에 정확히 겹침
   const overlay = document.createElement('div');
   overlay.id = 'ethics-overlay';
   overlay.style.cssText = `
-    position: absolute;
-    top: ${imgTop}px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: ${bgImg.clientWidth}px;
-    height: ${imgH}px;
-    pointer-events: none;
+    position:absolute;
+    top:${offsetY}px; left:${offsetX}px;
+    width:${renderW}px; height:${renderH}px;
+    pointer-events:none;
   `;
 
-  // 요소 묶음 wrapper (세로 위치: 83% 지점 기준)
+  // 요소 묶음: 이미지 하단 83% 지점
   const elemDiv = document.createElement('div');
   elemDiv.style.cssText = `
-    position: absolute;
-    left: 50%;
-    top: ${imgH * 0.83}px;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    pointer-events: all;
+    position:absolute;
+    left:50%; top:${Math.round(renderH * 0.83)}px;
+    transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center;
+    gap:${Math.round(6 * scale)}px;
+    pointer-events:all;
   `;
 
-  // --- 체크박스 행 ---
+  const fs     = Math.max(11, Math.round(13 * scale));
+  const btnW   = Math.round(240 * scale);
+  const btnH   = Math.round(40  * scale);
+
+  // 체크박스 행
   const checkRow = document.createElement('label');
   checkRow.className = 'ethics-checkbox-row';
+  checkRow.style.gap = `${Math.round(8 * scale)}px`;
 
   const checkbox = document.createElement('input');
-  checkbox.type = 'checkbox';
-  checkbox.id = 'ethics-agree-checkbox';
+  checkbox.type  = 'checkbox';
+  checkbox.id    = 'ethics-agree-checkbox';
+  checkbox.style.cssText = `
+    width:${Math.round(18*scale)}px; height:${Math.round(18*scale)}px;
+    cursor:pointer; accent-color:#FFBC00;
+  `;
 
   const checkLabel = document.createElement('span');
-  checkLabel.className = 'ethics-checkbox-label';
+  checkLabel.className   = 'ethics-checkbox-label';
+  checkLabel.style.fontSize = `${fs}px`;
   checkLabel.textContent = "본인은 상기의 '윤리강령' 내용을 확인하였으며, 이를 준수할 것을 다짐합니다.";
 
   checkRow.appendChild(checkbox);
   checkRow.appendChild(checkLabel);
 
-  // --- 날짜 텍스트 ---
   const dateEl = document.createElement('p');
-  dateEl.className = 'ethics-date-text';
+  dateEl.className   = 'ethics-date-text';
+  dateEl.style.fontSize = `${fs}px`;
   dateEl.textContent = dateStr;
 
-  // --- 사번 / 서명 텍스트 ---
   const empEl = document.createElement('p');
-  empEl.className = 'ethics-emp-text';
+  empEl.className   = 'ethics-emp-text';
+  empEl.style.fontSize = `${fs}px`;
   empEl.textContent = `직원번호 : ${empNoStr}       서명 : ${empNameStr}`;
 
-  // --- 제출 버튼 ---
   const submitBtn = document.createElement('button');
-  submitBtn.className = 'submit-btn ethics-submit-btn disabled';
+  submitBtn.className   = 'submit-btn ethics-submit-btn disabled';
   submitBtn.textContent = '확인 및 업무 시작';
   submitBtn.style.cssText = `
-    width: 240px;
-    height: 40px;
-    font-size: 13px;
-    margin-top: 4px;
-    pointer-events: all;
+    width:${btnW}px; height:${btnH}px;
+    font-size:${fs}px;
+    margin-top:${Math.round(4*scale)}px;
+    pointer-events:all;
   `;
 
-  // 체크박스 이벤트
   checkbox.addEventListener('change', () => {
-    if (checkbox.checked) {
-      submitBtn.classList.remove('disabled');
-      submitBtn.classList.add('active');
-    } else {
-      submitBtn.classList.remove('active');
-      submitBtn.classList.add('disabled');
-    }
+    submitBtn.classList.toggle('disabled', !checkbox.checked);
+    submitBtn.classList.toggle('active',    checkbox.checked);
   });
-
-  // 제출 버튼 클릭
   submitBtn.addEventListener('click', () => {
-    if (submitBtn.classList.contains('active')) {
-      onAgree();
-    }
+    if (submitBtn.classList.contains('active')) onAgree();
   });
 
   elemDiv.appendChild(checkRow);
@@ -214,190 +176,198 @@ function drawSelfCheckUI(taskData) {
 
   const wrapper = document.createElement('div');
   wrapper.id = 'selfcheck-wrapper';
+  wrapper.style.cssText = 'position:relative;width:100vw;height:100vh;overflow:hidden;';
 
-  // 배경 이미지
   const bgImg = document.createElement('img');
-  bgImg.id = 'selfcheck-bg-img';
+  bgImg.id  = 'selfcheck-bg-img';
   bgImg.alt = '자가점검';
+  bgImg.style.cssText = `
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    max-width:100%; max-height:100%;
+    width:auto; height:auto; display:block;
+  `;
   bgImg.src = 'img_self_check_bg.png';
 
   bgImg.onerror = async () => {
-    await window.electronAPI.dialogError(
-      '오류',
-      '자가점검 배경 이미지(img_self_check_bg.png)를 찾을 수 없습니다.'
-    );
+    await window.electronAPI.dialogError('오류', '자가점검 배경 이미지(img_self_check_bg.png)를 찾을 수 없습니다.');
     terminateProgram();
   };
-
-  bgImg.onload = () => {
-    buildSelfCheckOverlay(wrapper, bgImg, qstnList);
-  };
+  bgImg.onload = () => buildSelfCheckOverlay(wrapper, bgImg, qstnList);
 
   wrapper.appendChild(bgImg);
   container.appendChild(wrapper);
 }
 
 function buildSelfCheckOverlay(wrapper, bgImg, qstnList) {
-  const boxHeight = bgImg.clientHeight;
-  const boxWidth  = bgImg.clientWidth;
-  const naturalH  = bgImg.naturalHeight;
-  const naturalW  = bgImg.naturalWidth;
+  const ex = wrapper.querySelector('#selfcheck-overlay');
+  if (ex) ex.remove();
+
+  const naturalW = bgImg.naturalWidth;   // 3508
+  const naturalH = bgImg.naturalHeight;  // 2480
+
+  const { scale, renderW, renderH, offsetX, offsetY } = calcImageFit(naturalW, naturalH);
 
   // -----------------------------------------------------------------------
-  // 스케일 비율 (렌더 크기 / 원본 크기)
-  // 기존 이미지 원본 해상도 기준으로 비율 계산
+  // 원본 이미지(3508×2480) 기준 좌표값
+  // (측정값: 흰색 카드 top=658, bottom=2394, left=125, right=3384)
   // -----------------------------------------------------------------------
-  const scaleH = boxHeight / naturalH;
-  const scaleW = boxWidth  / naturalW;
+  const CARD_TOP    = 658;
+  const CARD_BOTTOM = 2394;
+  const CARD_LEFT   = 125;
+  const CARD_RIGHT  = 3384;
+  const CARD_W      = CARD_RIGHT - CARD_LEFT;   // 3259
+  const CARD_H      = CARD_BOTTOM - CARD_TOP;   // 1736
 
-  // -----------------------------------------------------------------------
-  // [핵심 수치] 기존 이미지 레이아웃 기준 좌표값 (원본 px 기준)
-  //
-  //  이미지 구조 (원본 약 1280×960 기준 추정):
-  //  ┌─────────────────────────────────────────────────────┐
-  //  │  KB금융그룹 로고 헤더                                │  ~0~60px
-  //  │  법규준수 자가점검 타이틀 + 우측 일러스트           │  ~60~220px
-  //  │  안녕하세요 카드 + 점검 주기/소요시간/총문항 칩     │  ~220~350px
-  //  │  점검 항목 라벨                                     │  ~350~400px
-  //  ├─────────────────────────────────────────────────────┤
-  //  │  [질문 1] ─────────────────────────── [예] [아니오] │  ~400~490px
-  //  │  [질문 2] ─────────────────────────── [예] [아니오] │  ~490~580px
-  //  │  [질문 3] ─────────────────────────── [예] [아니오] │  ~580~670px
-  //  │                                                     │
-  //  ├─────────────────────────────────────────────────────┤
-  //  │  하단 안내 문구 (좌측)          [제출(확인)] 버튼   │  ~900~960px
-  //  └─────────────────────────────────────────────────────┘
-  //
-  //  아래 수치는 원본 이미지 px 기준입니다.
-  //  실제 이미지 해상도에 따라 startY_orig 값을 조정하세요.
-  // -----------------------------------------------------------------------
+  // 질문 영역: 카드 내 30%~85% 구간에 3개 질문 배치
+  const startY_orig       = CARD_TOP  + CARD_H * 0.30;  // ≈1179
+  const yGap_orig         = CARD_H    * 0.183;           // ≈318  (질문 간 간격)
+  const textLeftX_orig    = CARD_LEFT + CARD_W * 0.030;  // ≈223  (텍스트 좌측 여백)
+  const radioYesX_orig    = CARD_RIGHT - CARD_W * 0.095; // ≈3049 ("예" 라디오 X)
+  const linePadding_orig  = CARD_W    * 0.02;            // ≈65   (구분선 좌우 여백)
+  const dividerOffset_orig = yGap_orig * 0.80;           // ≈254  (구분선 Y 오프셋)
 
-  // 질문 목록 시작 Y (원본 px): "점검 항목" 라벨 아래 첫 질문 시작점
-  const startY_orig  = 418;
-  // 질문 간 세로 간격 (원본 px)
-  const yGap_orig    = 92;
-  // 질문 텍스트 왼쪽 여백 (원본 px)
-  const textLeftX_orig = 78;
-  // "예" 라디오 버튼 X 위치 (원본 px, 우측에서)
-  const radioYesX_orig = naturalW - 195;
-  // "아니오" 라디오 버튼 X 위치 (원본 px, 우측에서)
-  const radioNoX_orig  = naturalW - 118;
-  // 구분선 좌우 여백 (원본 px)
-  const linePadding_orig = 60;
-  // 구분선 Y 오프셋 (질문 currentY 기준, 원본 px)
-  const dividerOffset_orig = 78;
+  // 제출 버튼: 카드 우측 하단
+  const btnCenterX_orig = CARD_RIGHT - CARD_W * 0.060;  // ≈3188
+  const btnCenterY_orig = CARD_BOTTOM - CARD_H * 0.040; // ≈2325
+  const btnW_orig       = CARD_W * 0.090;               // ≈293
+  const btnH_orig       = CARD_H * 0.055;               // ≈95
 
-  // 실제 렌더 좌표로 변환
-  const startY      = Math.round(startY_orig  * scaleH);
-  const yGap        = Math.round(yGap_orig    * scaleH);
-  const textLeftX   = Math.round(textLeftX_orig * scaleW);
-  const radioYesX   = Math.round(radioYesX_orig * scaleW);
-  const radioNoX    = Math.round(radioNoX_orig  * scaleW);
-  const linePadding = Math.round(linePadding_orig * scaleW);
-  const dividerOffset = Math.round(dividerOffset_orig * scaleH);
+  // 렌더 좌표로 변환
+  const startY         = Math.round(startY_orig        * scale);
+  const yGap           = Math.round(yGap_orig          * scale);
+  const textLeftX      = Math.round(textLeftX_orig     * scale);
+  const radioYesX      = Math.round(radioYesX_orig     * scale);
+  const linePadding    = Math.round(linePadding_orig   * scale);
+  const dividerOffset  = Math.round(dividerOffset_orig * scale);
+  const btnCenterX     = Math.round(btnCenterX_orig    * scale);
+  const btnCenterY     = Math.round(btnCenterY_orig    * scale);
+  const btnW           = Math.round(btnW_orig          * scale);
+  const btnH           = Math.round(btnH_orig          * scale);
 
-  // 오버레이 컨테이너
+  // 폰트 크기: 윈도우 기준 목표 크기를 scale로 역산
+  // 목표: 질문 제목 16px, 질문 내용 14px, 라디오 13px (1920×1080 기준)
+  const titleFontSize   = Math.max(12, Math.round(37 * scale));   // 원본 37px → 렌더 16px@1920
+  const contentFontSize = Math.max(11, Math.round(32 * scale));
+  const radioFontSize   = Math.max(11, Math.round(30 * scale));
+  const btnFontSize     = Math.max(12, Math.round(32 * scale));
+
+  // 오버레이: 이미지 실제 렌더 영역에 정확히 겹침
   const overlay = document.createElement('div');
   overlay.id = 'selfcheck-overlay';
   overlay.style.cssText = `
-    position: absolute;
-    top: 0; left: 0;
-    width: ${boxWidth}px;
-    height: ${boxHeight}px;
-    pointer-events: none;
+    position:absolute;
+    top:${offsetY}px; left:${offsetX}px;
+    width:${renderW}px; height:${renderH}px;
+    pointer-events:none;
   `;
 
   // userAnswers 초기화
   userAnswers = {};
-  qstnList.forEach((qstn) => {
-    userAnswers[qstn.qstn_cd] = '';
+  qstnList.forEach(q => { userAnswers[q.qstn_cd] = ''; });
+
+  // -----------------------------------------------------------------------
+  // 제출 버튼
+  // -----------------------------------------------------------------------
+  const submitBtn = document.createElement('button');
+  submitBtn.className   = 'submit-btn disabled';
+  submitBtn.id          = 'selfcheck-submit-btn';
+  submitBtn.textContent = '제출(확인)';
+  submitBtn.style.cssText = `
+    position:absolute;
+    left:${btnCenterX - Math.round(btnW/2)}px;
+    top:${btnCenterY  - Math.round(btnH/2)}px;
+    width:${btnW}px; height:${btnH}px;
+    font-size:${btnFontSize}px;
+    border-radius:${Math.round(8*scale)}px;
+    pointer-events:all;
+  `;
+  submitBtn.addEventListener('click', () => {
+    if (submitBtn.classList.contains('active')) onAgree();
   });
 
   // -----------------------------------------------------------------------
   // 각 질문 렌더링
   // -----------------------------------------------------------------------
   qstnList.forEach((qstn, idx) => {
-    const qCd     = qstn.qstn_cd;
-    const qTitle  = qstn.qstn_nm  || '';
-    const qContent= qstn.qstn_cn  || '';
+    const qCd      = qstn.qstn_cd;
+    const qTitle   = qstn.qstn_nm || '';
+    const qContent = qstn.qstn_cn || '';
     const currentY = startY + idx * yGap;
 
     const displayTitle = qTitle
-      ? `${String(idx + 1).padStart(2, '0')}. ${qTitle}`
-      : `${String(idx + 1).padStart(2, '0')}. 자가점검 항목`;
+      ? `${String(idx+1).padStart(2,'0')}. ${qTitle}`
+      : `${String(idx+1).padStart(2,'0')}. 자가점검 항목`;
 
-    // -- 제목 --
+    // 제목
     const titleEl = document.createElement('div');
     titleEl.className = 'question-title';
     titleEl.textContent = displayTitle;
     titleEl.style.cssText = `
-      position: absolute;
-      top: ${currentY}px;
-      left: ${textLeftX}px;
-      font-size: ${Math.max(11, Math.round(13 * scaleH))}px;
-      pointer-events: none;
+      position:absolute;
+      top:${currentY}px; left:${textLeftX}px;
+      font-size:${titleFontSize}px;
+      pointer-events:none;
     `;
 
-    // -- 내용 --
+    // 내용
     const contentEl = document.createElement('div');
     contentEl.className = 'question-content';
     contentEl.textContent = qContent;
     contentEl.style.cssText = `
-      position: absolute;
-      top: ${currentY + Math.round(20 * scaleH)}px;
-      left: ${textLeftX}px;
-      max-width: ${Math.round(boxWidth * 0.65)}px;
-      font-size: ${Math.max(10, Math.round(11 * scaleH))}px;
-      pointer-events: none;
+      position:absolute;
+      top:${currentY + Math.round(titleFontSize * 1.6)}px;
+      left:${textLeftX}px;
+      max-width:${Math.round(renderW * 0.62)}px;
+      font-size:${contentFontSize}px;
+      pointer-events:none;
     `;
 
-    // -- 라디오 버튼 그룹 --
+    // 라디오 그룹
     const radioGroup = document.createElement('div');
     radioGroup.className = 'radio-group';
     radioGroup.style.cssText = `
-      position: absolute;
-      top: ${currentY + Math.round(18 * scaleH)}px;
-      left: ${radioYesX}px;
-      display: flex;
-      gap: ${Math.round(14 * scaleW)}px;
-      align-items: center;
-      pointer-events: all;
+      position:absolute;
+      top:${currentY + Math.round(titleFontSize * 1.4)}px;
+      left:${radioYesX}px;
+      display:flex;
+      gap:${Math.round(20*scale)}px;
+      align-items:center;
+      pointer-events:all;
     `;
 
     // 예 라디오
     const yesLabel = document.createElement('label');
-    yesLabel.className = 'radio-label yes-label';
-    yesLabel.style.fontSize = `${Math.max(10, Math.round(12 * scaleH))}px`;
-
+    yesLabel.className   = 'radio-label yes-label';
+    yesLabel.style.fontSize = `${radioFontSize}px`;
     const yesRadio = document.createElement('input');
-    yesRadio.type = 'radio';
-    yesRadio.name = `question_${qCd}`;
+    yesRadio.type  = 'radio';
+    yesRadio.name  = `question_${qCd}`;
     yesRadio.value = 'Y';
-    yesRadio.style.accentColor = '#FFBC00';
+    yesRadio.style.cssText = `
+      width:${Math.round(18*scale)}px; height:${Math.round(18*scale)}px;
+      accent-color:#FFBC00; cursor:pointer;
+    `;
     yesRadio.addEventListener('change', () => {
-      if (yesRadio.checked) {
-        userAnswers[qCd] = 'Y';
-        checkSelfCheckComplete(submitBtn);
-      }
+      if (yesRadio.checked) { userAnswers[qCd] = 'Y'; checkSelfCheckComplete(submitBtn); }
     });
     yesLabel.appendChild(yesRadio);
     yesLabel.appendChild(document.createTextNode(' 예'));
 
     // 아니오 라디오
     const noLabel = document.createElement('label');
-    noLabel.className = 'radio-label no-label';
-    noLabel.style.fontSize = `${Math.max(10, Math.round(12 * scaleH))}px`;
-
+    noLabel.className   = 'radio-label no-label';
+    noLabel.style.fontSize = `${radioFontSize}px`;
     const noRadio = document.createElement('input');
-    noRadio.type = 'radio';
-    noRadio.name = `question_${qCd}`;
+    noRadio.type  = 'radio';
+    noRadio.name  = `question_${qCd}`;
     noRadio.value = 'N';
-    noRadio.style.accentColor = '#E53E3E';
+    noRadio.style.cssText = `
+      width:${Math.round(18*scale)}px; height:${Math.round(18*scale)}px;
+      accent-color:#E53E3E; cursor:pointer;
+    `;
     noRadio.addEventListener('change', () => {
-      if (noRadio.checked) {
-        userAnswers[qCd] = 'N';
-        checkSelfCheckComplete(submitBtn);
-      }
+      if (noRadio.checked) { userAnswers[qCd] = 'N'; checkSelfCheckComplete(submitBtn); }
     });
     noLabel.appendChild(noRadio);
     noLabel.appendChild(document.createTextNode(' 아니오'));
@@ -405,15 +375,15 @@ function buildSelfCheckOverlay(wrapper, bgImg, qstnList) {
     radioGroup.appendChild(yesLabel);
     radioGroup.appendChild(noLabel);
 
-    // -- 구분선 --
+    // 구분선
     const divider = document.createElement('div');
     divider.className = 'question-divider';
     divider.style.cssText = `
-      position: absolute;
-      top: ${currentY + dividerOffset}px;
-      left: ${linePadding}px;
-      width: ${boxWidth - linePadding * 2}px;
-      pointer-events: none;
+      position:absolute;
+      top:${currentY + dividerOffset}px;
+      left:${linePadding}px;
+      width:${renderW - linePadding*2}px;
+      pointer-events:none;
     `;
 
     overlay.appendChild(titleEl);
@@ -422,109 +392,75 @@ function buildSelfCheckOverlay(wrapper, bgImg, qstnList) {
     overlay.appendChild(divider);
   });
 
-  // -----------------------------------------------------------------------
-  // 제출(확인) 버튼
-  //  기존 이미지 기준: 우측 하단 고정 위치
-  //  원본 기준: X = naturalW - 145, Y = naturalH - 42 (버튼 중심)
-  // -----------------------------------------------------------------------
-  const btnCenterX_orig = naturalW - 145;
-  const btnCenterY_orig = naturalH - 42;
-  const btnW_orig = 152;
-  const btnH_orig = 52;
-
-  const btnCenterX = Math.round(btnCenterX_orig * scaleW);
-  const btnCenterY = Math.round(btnCenterY_orig * scaleH);
-  const btnW = Math.round(btnW_orig * scaleW);
-  const btnH = Math.round(btnH_orig * scaleH);
-
-  const submitBtn = document.createElement('button');
-  submitBtn.className = 'submit-btn disabled';
-  submitBtn.id = 'selfcheck-submit-btn';
-  submitBtn.textContent = '제출(확인)';
-  submitBtn.style.cssText = `
-    position: absolute;
-    left: ${btnCenterX - btnW / 2}px;
-    top:  ${btnCenterY - btnH / 2}px;
-    width:  ${btnW}px;
-    height: ${btnH}px;
-    font-size: ${Math.max(11, Math.round(14 * scaleH))}px;
-    border-radius: 8px;
-    pointer-events: all;
-  `;
-
-  submitBtn.addEventListener('click', () => {
-    if (submitBtn.classList.contains('active')) {
-      onAgree();
-    }
-  });
-
   overlay.appendChild(submitBtn);
   wrapper.appendChild(overlay);
 }
 
-// 기존: checkSelfCheckComplete(submitBtn, btnLabel)
-// 변경: checkSelfCheckComplete(submitBtn)
+// =========================================================================
+// checkSelfCheckComplete
+// =========================================================================
 function checkSelfCheckComplete(submitBtn) {
-  const allAnswered = Object.values(userAnswers).every((v) => v !== '');
-
-  if (allAnswered) {
-    submitBtn.classList.remove('disabled');
-    submitBtn.classList.add('active');
-  } else {
-    submitBtn.classList.remove('active');
-    submitBtn.classList.add('disabled');
-  }
+  const allAnswered = Object.values(userAnswers).every(v => v !== '');
+  submitBtn.classList.toggle('active',   allAnswered);
+  submitBtn.classList.toggle('disabled', !allAnswered);
 }
 
+// =========================================================================
+// 윈도우 리사이즈 시 오버레이 재계산 (디바운스 100ms)
+// =========================================================================
+let _resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    if (!currentTaskData) return;
+    if (taskTypeStr === 'ETHICS') {
+      const wrapper = document.getElementById('ethics-wrapper');
+      const bgImg   = document.getElementById('ethics-bg-img');
+      if (wrapper && bgImg && bgImg.complete) setupEthicsElements(wrapper, bgImg);
+    } else if (taskTypeStr === 'SELF_CHECK') {
+      const wrapper  = document.getElementById('selfcheck-wrapper');
+      const bgImg    = document.getElementById('selfcheck-bg-img');
+      const qstnList = (currentTaskData.qstn_list || []).slice(0, 3);
+      if (wrapper && bgImg && bgImg.complete) buildSelfCheckOverlay(wrapper, bgImg, qstnList);
+    }
+  }, 100);
+});
 
 // =========================================================================
-// 제출 처리 (on_agree)
+// 제출 처리
 // =========================================================================
 async function onAgree() {
   const submitUrl = `${BASE_URL}/submit-compliance`;
-
-  // 1. 정상응답 준수 여부 검증
   let isAllCorrect = true;
+
   if (taskTypeStr === 'SELF_CHECK') {
     for (const [qCd, userAns] of Object.entries(userAnswers)) {
-      const correctAns = standardAnswers[qCd] || 'Y';
-      if (userAns !== correctAns) {
-        isAllCorrect = false;
-        break;
-      }
+      if (userAns !== (standardAnswers[qCd] || 'Y')) { isAllCorrect = false; break; }
     }
-
-    // 2. 오답 항목 있으면 재확인 팝업
     if (!isAllCorrect) {
       const confirmed = await window.electronAPI.dialogYesNo(
         '자가점검 재확인',
         '보안 지침에 위배되는 답변 항목이 존재합니다.\n이대로 점검 결과를 제출하시겠습니까?'
       );
-      if (!confirmed) return; // 아니오 선택 시 제출 유보
+      if (!confirmed) return;
     }
   }
 
-  // 3. 최종 동의 여부 플래그
-  const finalAgrYn = isAllCorrect ? 'Y' : 'N';
-
-  // 4. 페이로드 구성
   const payload = {
     task_id: /^\d+$/.test(taskIdStr) ? parseInt(taskIdStr, 10) : null,
     app_seq: /^\d+$/.test(appSeqStr) ? parseInt(appSeqStr, 10) : null,
     emp_no: empNoStr,
     emp_main_ans_yn: 'Y',
-    emp_ans_agr_yn: finalAgrYn,
+    emp_ans_agr_yn:  isAllCorrect ? 'Y' : 'N',
     answers: [],
   };
 
   if (taskTypeStr === 'SELF_CHECK') {
     payload.answers = Object.entries(userAnswers).map(([qCd, ans]) => ({
-      qstn_cd: qCd,
-      emp_ans_yn: ans,
+      qstn_cd: qCd, emp_ans_yn: ans,
     }));
   }
 
-  // 5. 서버 전송
   try {
     const response = await fetch(submitUrl, {
       method: 'POST',
@@ -532,61 +468,69 @@ async function onAgree() {
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(3000),
     });
-
     const resData = await response.json().catch(() => ({}));
 
     if (response.status === 200) {
-      await window.electronAPI.dialogInfo(
-        '알림',
-        resData.message || '준법 프로그램 수행 기록이 정상적으로 저장되었습니다.'
-      );
+      await window.electronAPI.dialogInfo('알림', resData.message || '준법 프로그램 수행 기록이 정상적으로 저장되었습니다.');
       terminateProgram();
     } else if ([400, 404, 500].includes(response.status)) {
-      await window.electronAPI.dialogWarning(
-        '제출 실패',
-        resData.message || '알 수 없는 오류'
-      );
+      await window.electronAPI.dialogWarning('제출 실패', resData.message || '알 수 없는 오류');
       terminateProgram();
     } else {
-      await window.electronAPI.dialogError(
-        '오류',
-        `정의되지 않은 서버 응답 에러가 발생했습니다.\nStatus Code: ${response.status}`
-      );
+      await window.electronAPI.dialogError('오류', `정의되지 않은 서버 응답 에러가 발생했습니다.\nStatus Code: ${response.status}`);
       terminateProgram();
     }
   } catch (e) {
-    await window.electronAPI.dialogError(
-      '네트워크 오류',
-      `서버에 서약 데이터를 전송하지 못했습니다.\n네트워크 연결 상태를 재확인해 주세요.\n\n에러: ${e.message}`
-    );
+    await window.electronAPI.dialogError('네트워크 오류', `서버에 서약 데이터를 전송하지 못했습니다.\n\n에러: ${e.message}`);
     terminateProgram();
   }
 }
 
 // =========================================================================
-// 진입점: Electron 메인 프로세스로부터 초기화 이벤트 수신
+// 진입점
 // =========================================================================
 window.electronAPI.onInit(async ({ empNo }) => {
   empNoStr = empNo;
 
-  // 데이터 조회
   const taskData = await fetchTaskAndInit();
+  if (!taskData) { terminateProgram(); return; }
 
-  // 데이터 없으면 즉시 종료 (Python의 4번 단계와 동일)
-  if (!taskData) {
-    terminateProgram();
-    return;
-  }
-
-  // 로딩 숨기고 앱 표시 + 창 화면에 나타내기
+  currentTaskData = taskData;
   showLoading(false);
   showApp(true);
   window.electronAPI.showWindow();
 
-  // UI 그리기
   if (taskTypeStr === 'ETHICS') {
     await drawEthicsUI(taskData);
   } else if (taskTypeStr === 'SELF_CHECK') {
     drawSelfCheckUI(taskData);
   }
 });
+
+// =========================================================================
+// 서버 통신: 태스크 조회
+// =========================================================================
+async function fetchTaskAndInit() {
+  const url = `${BASE_URL}/get-task-qstn?emp_no=${empNoStr}`;
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(3000) });
+    if (!response.ok) return null;
+    const results = await response.json();
+    if (!results || results.length === 0) return null;
+
+    const taskData = results[0];
+    taskIdStr   = String(taskData.task_id  ?? '');
+    appSeqStr   = String(taskData.app_seq  ?? '');
+    taskTypeStr = taskData.task_type || 'ETHICS';
+
+    if (taskTypeStr === 'SELF_CHECK' && Array.isArray(taskData.qstn_list)) {
+      for (const qstn of taskData.qstn_list) {
+        standardAnswers[qstn.qstn_cd] = qstn.qstn_std_ans_yn || 'Y';
+      }
+    }
+    return taskData;
+  } catch (e) {
+    console.error('태스크 조회 실패:', e);
+    return null;
+  }
+}
