@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 
 // Windows 레지스트리에서 AuthID 읽기
@@ -42,6 +42,10 @@ async function createWindow(empNo) {
     },
   });
 
+  // 다이얼로그 표시 시 fullscreen 해제 및 하단 바 노출 방지
+  mainWindow.setAlwaysOnTop(true, 'screen-saver');
+  mainWindow.setFullScreenable(false);
+
   await mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 
   // 렌더러에 사번 전달 후 데이터 조회 지시
@@ -76,52 +80,6 @@ ipcMain.on('show-window', () => {
 // 프로그램 강제 종료
 ipcMain.on('terminate', () => {
   app.exit(0);
-});
-
-// 알림 다이얼로그 (showinfo)
-ipcMain.handle('dialog-info', async (_event, { title, message }) => {
-  await dialog.showMessageBox(mainWindow, {
-    type: 'info',
-    title,
-    message,
-    buttons: ['확인'],
-  });
-  return true;
-});
-
-// 경고 다이얼로그 (showwarning)
-ipcMain.handle('dialog-warning', async (_event, { title, message }) => {
-  await dialog.showMessageBox(mainWindow, {
-    type: 'warning',
-    title,
-    message,
-    buttons: ['확인'],
-  });
-  return true;
-});
-
-// 에러 다이얼로그 (showerror)
-ipcMain.handle('dialog-error', async (_event, { title, message }) => {
-  await dialog.showMessageBox(mainWindow, {
-    type: 'error',
-    title,
-    message,
-    buttons: ['확인'],
-  });
-  return true;
-});
-
-// Yes/No 확인 다이얼로그 (askyesno)
-ipcMain.handle('dialog-yesno', async (_event, { title, message }) => {
-  const result = await dialog.showMessageBox(mainWindow, {
-    type: 'question',
-    title,
-    message,
-    buttons: ['예', '아니오'],
-    defaultId: 0,
-    cancelId: 1,
-  });
-  return result.response === 0; // 0 = '예'
 });
 
 app.on('window-all-closed', () => {
