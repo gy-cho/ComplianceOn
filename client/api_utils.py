@@ -3,7 +3,9 @@ import requests
 import streamlit as st
 import json
 
-BASE_URL = "http://192.168.62.94:8080"
+
+BASE_URL = "http://10.201.2.93:8080"
+# BASE_URL = "http://192.168.62.94:8080"
 # BASE_URL = "http://127.0.0.1:8080"
 def fetch_emp_answers(task_id: int = None, app_seq: int = None):
     """
