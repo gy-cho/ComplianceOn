@@ -93,7 +93,7 @@ draw_sidebar(cookies=cookies)
 if st.session_state.menu == "현황 조회":
     show_dashboard_page()
 
-elif st.session_state.menu == "콘텐츠 관리":
+elif st.session_state.menu == "준법 TASK":
     show_task_management_page()
 
 elif st.session_state.menu == "직원 관리":

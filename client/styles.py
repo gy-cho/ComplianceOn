@@ -1,13 +1,16 @@
 import streamlit as st
 
 KB_YELLOW = "#FFBC00"
+NEUTRAL = "#EEF0F5"
 
+
+# 전체 공통 스타일
 def apply_custom_css():
     st.markdown(f"""
         <style>
         [data-testid="stSidebar"] {{
             background-color: #FFFFFF !important;
-            border-right: 1px solid #EEF0F5;
+            border-right: 1px solid {NEUTRAL};
         }}
         [data-testid="stSidebar"] .stButton button {{
             width: 100%;
@@ -46,23 +49,37 @@ def apply_custom_css():
         .metric-label {{ font-size: 0.95rem; color: #666666; font-weight: 600; margin-bottom: 8px; }}
         .metric-value {{ font-size: 2rem; font-weight: 800; color: #333333; }}
         .metric-sub {{ font-size: 0.8rem; color: #999999; margin-top: 6px; }}
+
+        /* 공통 제목 스타일 */
+        .page-title {{
+            font-size: 26px;
+            font-weight: 700;
+            color: #1F2937;
+            margin-bottom: 25px;
+        }}
+
+        /* 페이지 여백 조절 */
+        .stMainBlockContainer {{
+            padding-top: 1rem !important;
+            padding-bottom: 5rem !important;
+        }}
         </style>
         """, unsafe_allow_html=True)
     
 
-# 2. '준비중' 페이지 전용 스타일
+# '준비중' 전용 스타일
 def get_coming_soon_style():
     st.markdown(f"""
         <style>
         [data-testid="stAppViewContainer"], 
         [data-testid="stHeader"],
         .main .block-container {{
-            background-color: #EEF0F5 !important; /* 이미지와 유사한 연한 회색 */
+            background-color: {NEUTRAL} !important; /* 이미지와 유사한 연한 회색 */
         }}
         .coming-soon-card {{
             background-color: #ffffff;
             border-radius: 12px;
-            border: 1px solid #EEF0F5; /* 그림자 대신 아주 연한 선으로 경계 구분 */
+            border: 1px solid {NEUTRAL}; /* 그림자 대신 아주 연한 선으로 경계 구분 */
             padding: 80px 40px;
             max-width: 700px;
             margin: 40px auto; /* 상단 여백 및 중앙 정렬 */
@@ -92,22 +109,14 @@ def get_coming_soon_style():
         """, unsafe_allow_html=True)
 
 
+# '현황 조회' 전용 스타일
 def apply_dashboard_style():
     st.markdown(f"""
         <style>
-        /* 1. 전체 배경색 */
         [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
-            background-color: #EEF0F5 !important;
+            background-color: {NEUTRAL} !important;
         }}
 
-        /* 2. 제목 스타일 */
-        .page-title {{
-            font-size: 26px;
-            font-weight: 700;
-            color: #1F2937;
-            margin-bottom: 25px;
-        }}
-        
         /* [중요] 신규 추가: 구조적 여백 버그를 방지하는 3단 분리형 카드 디자인 */
         div[data-testid="stLayoutWrapper"]:has(> div .card-content-v2) {{
             background-color: #ffffff !important;
@@ -161,22 +170,14 @@ def apply_dashboard_style():
     """, unsafe_allow_html=True)
 
 
-
+# '준법 TASK' 전용 스타일
 def apply_task_management_style():
     st.markdown(f"""
         <style>
-        /* 1. 전체 통합 배경색 */
         [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
-            background-color: #EEF0F5 !important;
+            background-color: {NEUTRAL} !important;
         }}
 
-        /* 2. 대시보드 폰트/제목 가이드 동기화 */
-        .page-title {{
-            font-size: 26px;
-            font-weight: 700;
-            color: #1F2937;
-            margin-bottom: 25px;
-        }}
         
         /* 대시보드 화면 전용 3단 분리형 카드 디자인 */
         div[data-testid="stLayoutWrapper"]:has(> div .card-content-v2) {{
@@ -205,21 +206,14 @@ def apply_task_management_style():
     """, unsafe_allow_html=True)
 
 
-# =========================================================================
-# 🎨 스타일 통합 함수 (대시보드 마스터 가이드 동기화)
-# =========================================================================
+# '직원 관리' 전용 스타일
 def apply_employee_style():
     st.markdown(f"""
         <style>
         [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
-            background-color: #EEF0F5 !important;
+            background-color: {NEUTRAL} !important;
         }}
-        .page-title {{
-            font-size: 26px;
-            font-weight: 700;
-            color: #1F2937;
-            margin-bottom: 25px;
-        }}
+
         div[data-testid="stLayoutWrapper"]:has(> div .card-content-v2) {{
             background-color: #ffffff !important;
             border-radius: 14px !important;
