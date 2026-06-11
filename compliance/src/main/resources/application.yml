@@ -13,3 +13,10 @@ logging:
     com.kbds.compliance: debug    # 📌 우리가 짠 코드 내부의 SQL 쿼리와 로그는 더 상세히(debug) 출력
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n" # 콘솔 포맷 지정
+
+cors:
+  allowed-origins:
+    - http://localhost:3000
+    - http://localhost:8501
+    - http://10.201.2.93
+    - http://192.168.62.94
