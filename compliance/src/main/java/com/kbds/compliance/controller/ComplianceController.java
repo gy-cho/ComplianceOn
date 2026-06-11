@@ -375,7 +375,7 @@ public class ComplianceController {
                     result.put("qstn_list",qstnList);
                 }
             }
-System.out.println("results ====>> "+results);
+            System.out.println("results ====>> "+results);
 
 
             return ResponseEntity.ok(results);
@@ -522,15 +522,30 @@ System.out.println("results ====>> "+results);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
         }
     }
-
-    // 📌 8. 이미 다른 TASK에서 사용 중인 모든 적용일 목록 조회 (과거 날짜 제외)
+    
+    // 📌 수정: 특정 TASK의 날짜는 제외하고 반환 (편집 시 자기 자신 날짜 선택 가능하도록)
     @GetMapping("/get-all-used-dates")
-    public ResponseEntity<?> getAllUsedDates() {
+    public ResponseEntity<?> getAllUsedDates(
+            @RequestParam(value = "exclude_task_id", required = false) Integer excludeTaskId) {
         try {
-            String query = "SELECT DISTINCT TO_CHAR(TASK_APP_DT, 'YYYY-MM-DD') AS app_dt " +
-                           "FROM TB_COMP_TASK_APP_DT " +
-                           "WHERE DEL_YN = 'N' AND TASK_APP_DT >= CURRENT_DATE";
-            List<Map<String, Object>> rows = jdbcTemplate.queryForList(query, new MapSqlParameterSource());
+            String query;
+            MapSqlParameterSource params = new MapSqlParameterSource();
+
+            if (excludeTaskId != null) {
+                // 편집 모드: 자기 자신의 TASK 날짜는 제외
+                query = "SELECT DISTINCT TO_CHAR(TASK_APP_DT, 'YYYY-MM-DD') AS app_dt " +
+                        "FROM TB_COMP_TASK_APP_DT " +
+                        "WHERE DEL_YN = 'N' AND TASK_APP_DT >= CURRENT_DATE " +
+                        "AND TASK_ID != :excludeTaskId";
+                params.addValue("excludeTaskId", excludeTaskId);
+            } else {
+                // 신규 등록 모드: 전체 사용 중인 날짜 반환
+                query = "SELECT DISTINCT TO_CHAR(TASK_APP_DT, 'YYYY-MM-DD') AS app_dt " +
+                        "FROM TB_COMP_TASK_APP_DT " +
+                        "WHERE DEL_YN = 'N' AND TASK_APP_DT >= CURRENT_DATE";
+            }
+
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(query, params);
             List<String> dates = rows.stream().map(r -> (String) r.get("app_dt")).toList();
             return ResponseEntity.ok(dates);
         } catch (Exception e) {
@@ -609,53 +624,97 @@ System.out.println("results ====>> "+results);
     @Transactional
     public ResponseEntity<?> updateComplianceTask(@RequestBody Map<String, Object> payload) {
         try {
-
             System.out.println("=============== payload update ================");
             System.out.println(payload);
 
             int task_id = (Integer) payload.get("task_id");
             String emp_no = (String) payload.get("emp_no");
-            
+
             // 1. 마스터 업데이트
-            String updateQuery = "UPDATE TB_COMP_TASK SET TASK_NM = :task_nm, IMG_FLNM = :img_flnm, PBLS_YN = :pbls_yn, TASK_CN = :task_cn, CHG_DTM = now(), CHG_EMP_NO = :emp_no WHERE TASK_ID = :task_id";
+            String updateQuery = "UPDATE TB_COMP_TASK SET TASK_NM = :task_nm, IMG_FLNM = :img_flnm, PBLS_YN = :pbls_yn, " +
+                                "TASK_CN = :task_cn, CHG_DTM = now(), CHG_EMP_NO = :emp_no WHERE TASK_ID = :task_id";
             jdbcTemplate.update(updateQuery, new MapSqlParameterSource(payload));
 
-            // 2. 기존 적용일 데이터 일괄 삭제 후 재등록 (또는 변경분 갱신)
-            jdbcTemplate.update("DELETE FROM TB_COMP_TASK_APP_DT WHERE TASK_ID = :task_id", new MapSqlParameterSource("task_id", task_id));
-            
+            // 2. 적용일 MERGE 처리 (DELETE 후 재등록 방식 → 날짜 단위 비교로 변경)
             if (payload.get("app_dates") != null) {
-                List<String> appDates = (List<String>) payload.get("app_dates");
-                int seq = 1;
-                List<Map<String, Object>> batchValues = new ArrayList<>();
-                for (String dt : appDates) {
-                    batchValues.add(Map.of("task_id", task_id, "appSeq", seq++, "appDt", dt, "emp_no", emp_no));
-                }
-                String dtQuery = "INSERT INTO TB_COMP_TASK_APP_DT (TASK_ID, APP_SEQ, TASK_APP_DT, DEL_YN, REG_EMP_NO) VALUES (:task_id, :appSeq, TO_DATE(:appDt, 'YYYY-MM-DD'), 'N', :emp_no)";
-                jdbcTemplate.batchUpdate(dtQuery, batchValues.toArray(new Map[0]));
-            }
+                List<String> newDates = (List<String>) payload.get("app_dates");
 
-            // 3. 질문 매핑 데이터 일괄 삭제 후 재등록 (또는 변경분 갱신) - 일단 질문은 수정 불가
-            /*
-            jdbcTemplate.update("DELETE FROM TB_COMP_TASK_QSTN WHERE TASK_ID = :task_id", new MapSqlParameterSource("task_id", task_id));
-            
-            if ("SELF_CHECK".equals(payload.get("task_type")) && payload.get("selected_qstn_cds") != null) {
-                List<String> selected_qstn_cds = (List<String>) payload.get("selected_qstn_cds");
-                if (!selected_qstn_cds.isEmpty()) {
-                    String dtQuery = "INSERT INTO TB_COMP_TASK_QSTN (TASK_ID, QSTN_CD, DEL_YN, REG_EMP_NO) " +
-                                     "VALUES (:taskId, :selectedQstnCds, 'N', :empNo)";
-                    List<Map<String, Object>> batchValues = new ArrayList<>();
-                    for (String dt : selected_qstn_cds) {
-                        batchValues.add(Map.of("taskId", task_id, "selectedQstnCds", selected_qstn_cds, "empNo", emp_no));
+                // 2-1. 현재 DB에 등록된 적용일 목록 조회 (삭제 포함 전체)
+                String selectExistingQuery = "SELECT APP_SEQ, TO_CHAR(TASK_APP_DT, 'YYYY-MM-DD') AS TASK_APP_DT, DEL_YN " +
+                                            "FROM TB_COMP_TASK_APP_DT WHERE TASK_ID = :task_id";
+                List<Map<String, Object>> existingRows = jdbcTemplate.queryForList(
+                    selectExistingQuery, new MapSqlParameterSource("task_id", task_id)
+                );
+
+                // 기존 날짜 → APP_SEQ 맵 구성 (날짜 문자열 기준)
+                Map<String, Integer> existingDateSeqMap = new LinkedHashMap<>();
+                for (Map<String, Object> row : existingRows) {
+                    existingDateSeqMap.put((String) row.get("task_app_dt"), (Integer) row.get("app_seq"));
+                }
+
+                // 2-2. 새 날짜 목록 기준으로 INSERT or 소프트딜리트 복원 처리
+                // 현재 DB의 최대 APP_SEQ 조회 (신규 순번 채번 기준)
+                String maxSeqQuery = "SELECT COALESCE(MAX(APP_SEQ), 0) FROM TB_COMP_TASK_APP_DT WHERE TASK_ID = :task_id";
+                int maxSeq = jdbcTemplate.queryForObject(maxSeqQuery, new MapSqlParameterSource("task_id", task_id), Integer.class);
+
+                for (String newDate : newDates) {
+                    if (existingDateSeqMap.containsKey(newDate)) {
+                        // 이미 존재하는 날짜 → DEL_YN = 'Y'이면 복원, 'N'이면 그대로 유지
+                        int seq = existingDateSeqMap.get(newDate);
+                        String restoreDtQuery = "UPDATE TB_COMP_TASK_APP_DT SET DEL_YN = 'N', CHG_DTM = now(), CHG_EMP_NO = :emp_no " +
+                                                "WHERE TASK_ID = :task_id AND APP_SEQ = :app_seq AND DEL_YN = 'Y'";
+                        jdbcTemplate.update(restoreDtQuery, new MapSqlParameterSource()
+                            .addValue("emp_no", emp_no)
+                            .addValue("task_id", task_id)
+                            .addValue("app_seq", seq));
+                    } else {
+                        // 신규 날짜 → 새 APP_SEQ 채번 후 INSERT
+                        maxSeq++;
+                        String insertDtQuery = "INSERT INTO TB_COMP_TASK_APP_DT (TASK_ID, APP_SEQ, TASK_APP_DT, DEL_YN, REG_EMP_NO) " +
+                                            "VALUES (:task_id, :appSeq, TO_DATE(:appDt, 'YYYY-MM-DD'), 'N', :emp_no)";
+                        jdbcTemplate.update(insertDtQuery, new MapSqlParameterSource()
+                            .addValue("task_id", task_id)
+                            .addValue("appSeq", maxSeq)
+                            .addValue("appDt", newDate)
+                            .addValue("emp_no", emp_no));
                     }
-                    jdbcTemplate.batchUpdate(dtQuery, batchValues.toArray(new Map[0]));
+                }
+
+                // 2-3. 새 날짜 목록에 없는 기존 날짜 → 답변 이력 확인 후 소프트딜리트 또는 하드 DELETE
+                for (Map.Entry<String, Integer> entry : existingDateSeqMap.entrySet()) {
+                    String existingDate = entry.getKey();
+                    int existingSeq = entry.getValue();
+
+                    if (!newDates.contains(existingDate)) {
+                        // 답변 이력 존재 여부 확인
+                        String ansCheckQuery = "SELECT COUNT(*) FROM TB_COMP_EMP_ANS " +
+                                            "WHERE TASK_ID = :task_id AND APP_SEQ = :app_seq";
+                        int ansCount = jdbcTemplate.queryForObject(ansCheckQuery, new MapSqlParameterSource()
+                            .addValue("task_id", task_id)
+                            .addValue("app_seq", existingSeq), Integer.class);
+
+                        if (ansCount > 0) {
+                            // 답변 이력 있음 → 소프트 딜리트
+                            String softDeleteQuery = "UPDATE TB_COMP_TASK_APP_DT SET DEL_YN = 'Y', CHG_DTM = now(), CHG_EMP_NO = :emp_no " +
+                                                    "WHERE TASK_ID = :task_id AND APP_SEQ = :app_seq";
+                            jdbcTemplate.update(softDeleteQuery, new MapSqlParameterSource()
+                                .addValue("emp_no", emp_no)
+                                .addValue("task_id", task_id)
+                                .addValue("app_seq", existingSeq));
+                        } else {
+                            // 답변 이력 없음 → 하드 DELETE
+                            String hardDeleteQuery = "DELETE FROM TB_COMP_TASK_APP_DT WHERE TASK_ID = :task_id AND APP_SEQ = :app_seq";
+                            jdbcTemplate.update(hardDeleteQuery, new MapSqlParameterSource()
+                                .addValue("task_id", task_id)
+                                .addValue("app_seq", existingSeq));
+                        }
+                    }
                 }
             }
-            */
 
             return ResponseEntity.ok(Map.of("status", "success"));
         } catch (Exception e) {
             throw e;
-            //return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
         }
     }
 
