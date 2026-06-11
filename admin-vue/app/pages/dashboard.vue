@@ -234,6 +234,10 @@ async function refresh() {
 }
 
 function handleRowClick(row: any) {
+  if (currentTask.value.task_type === 'ETHICS') {
+    return
+  }
+  
   if (!isAnswered(row)) {
     showToast('info', '해당 사원은 아직 답변을 완료하지 않았습니다.')
     return
