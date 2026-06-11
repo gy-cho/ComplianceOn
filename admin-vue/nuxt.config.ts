@@ -10,6 +10,7 @@ export default defineNuxtConfig({
       link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
     },
   },
+  modules: ['@nuxt/icon'],
   css: ['~/assets/css/global.css'],
   devServer: {
     host: '0.0.0.0',
