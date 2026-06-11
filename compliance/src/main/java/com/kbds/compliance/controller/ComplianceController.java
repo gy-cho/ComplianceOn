@@ -391,7 +391,8 @@ System.out.println("results ====>> "+results);
     @Transactional
     public ResponseEntity<?> addEmployee(@RequestBody EmployeeAddRequest data) {
         try {
-            String checkQuery = "SELECT EMP_NO FROM TB_EMP WHERE EMP_NO = :empNo";
+            // 활성 상태(DEL_YN = 'N')인 경우만 중복으로 판단
+            String checkQuery = "SELECT EMP_NO FROM TB_EMP WHERE EMP_NO = :empNo AND DEL_YN = 'N'";
             MapSqlParameterSource params = new MapSqlParameterSource("empNo", data.getEmp_no());
             List<Map<String, Object>> employees = jdbcTemplate.queryForList(checkQuery, params);
 
@@ -399,14 +400,24 @@ System.out.println("results ====>> "+results);
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse("이미 등록된 사번입니다."));
             }
 
-            String insertQuery = "INSERT INTO TB_EMP (EMP_NO, EMP_NM, IP, DEL_YN, REG_EMP_NO) " +
-                    "VALUES (:empNo, :empNm, :ip, 'N', 'ADMIN')";
             MapSqlParameterSource insertParams = new MapSqlParameterSource()
                     .addValue("empNo", data.getEmp_no())
                     .addValue("empNm", data.getEmp_nm())
                     .addValue("ip", data.getIp());
 
-            jdbcTemplate.update(insertQuery, insertParams);
+            // 소프트 딜리트된 레코드가 있으면 복원(UPDATE), 없으면 신규 등록(INSERT)
+            String existQuery = "SELECT EMP_NO FROM TB_EMP WHERE EMP_NO = :empNo";
+            List<Map<String, Object>> existing = jdbcTemplate.queryForList(existQuery, params);
+
+            if (!existing.isEmpty()) {
+                String restoreQuery = "UPDATE TB_EMP SET EMP_NM = :empNm, IP = :ip, DEL_YN = 'N', CHG_DTM = now() " +
+                                    "WHERE EMP_NO = :empNo";
+                jdbcTemplate.update(restoreQuery, insertParams);
+            } else {
+                String insertQuery = "INSERT INTO TB_EMP (EMP_NO, EMP_NM, IP, DEL_YN, REG_EMP_NO) " +
+                                    "VALUES (:empNo, :empNm, :ip, 'N', 'ADMIN')";
+                jdbcTemplate.update(insertQuery, insertParams);
+            }
 
             return ResponseEntity.status(HttpStatus.CREATED).body(successResponse(data.getEmp_nm() + " 사원이 관리 마스터에 유입되었습니다."));
 
