@@ -9,12 +9,12 @@ def show_emp_detail_page():
     # 저장해둔 파라미터 가져오기
     params = st.session_state.get("detail_params", {})
     
-    # 2. 상단 타이틀 영역
-    title_col, empty_col, btn_col = st.columns([2, 6.3, 0.8])
+    # 2. 상단 타이틀 영역 (flex 기반 한 줄 정렬)
+    title_col, btn_col = st.columns([8, 2])
     with title_col:
-        st.markdown('<div class="page-title">사원 상세 답변 내역</div>', unsafe_allow_html=True)
+        st.markdown('<div class="page-title">상세 답변 내역</div>', unsafe_allow_html=True)
     with btn_col:
-        if st.button("목록으로", use_container_width=True):
+        if st.button("목록으로"):
             st.session_state.current_page = "main"
             st.rerun()
 
