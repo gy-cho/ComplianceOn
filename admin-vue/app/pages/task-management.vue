@@ -88,7 +88,7 @@
         </div>
         <p v-else class="text-muted mb-8">TASK를 배포하거나 강제 노출할 날짜를 추가하세요.</p>
         <div class="row-center" style="gap:10px; margin-bottom:10px">
-          <input type="date" v-model="pickedDate" :min="todayStr" style="flex:1" />
+          <input type="date" v-model="pickedDate" :min="todayStr()" style="flex:1" />
           <button class="btn btn-secondary" style="width:90px" @click="addDate">날짜 추가</button>
         </div>
         <div v-if="tempDates.length > 0" class="table-wrapper">
@@ -102,7 +102,7 @@
             <tbody>
               <tr v-for="(d, i) in tempDates" :key="d">
                 <td>
-                  <input type="checkbox" :id="`del-c-${i}`" @change="removeDate(i)" />
+                  <input type="checkbox" :id="`del-c-${i}`" :disabled="d <= todayStr()" @change="removeDate(i)" />
                 </td>
                 <td>{{ d }}</td>
               </tr>
@@ -200,7 +200,7 @@
         </div>
         <p v-else class="text-muted mb-8">날짜 추가 또는 체크 해제로 삭제 처리가 가능합니다.</p>
         <div class="row-center" style="gap:10px; margin-bottom:10px">
-          <input type="date" v-model="pickedDate" :min="todayStr" style="flex:1" />
+          <input type="date" v-model="pickedDate" :min="todayStr()" style="flex:1" />
           <button class="btn btn-secondary" style="width:90px" @click="addDate">날짜 추가</button>
         </div>
         <div v-if="tempDates.length > 0" class="table-wrapper">
@@ -214,7 +214,7 @@
             <tbody>
               <tr v-for="(d, i) in tempDates" :key="d">
                 <td>
-                  <input type="checkbox" @change="removeDate(i)" />
+                  <input type="checkbox" :disabled="d <= todayStr()" @change="removeDate(i)" />
                 </td>
                 <td>{{ d }}</td>
               </tr>
@@ -228,17 +228,21 @@
       <div class="card">
         <div class="card-section-title">■ 상세 본문 및 문항 매핑 현황</div>
 
-        <!-- ETHICS: image edit -->
+        <!-- ETHICS: image view-only -->
         <template v-if="selectedTask.task_type === 'ETHICS'">
-          <div v-if="imageList.length > 0" class="form-group">
-            <label class="form-label">서약 내용 이미지 수정 (필수)</label>
-            <select v-model="form.img_flnm" class="form-select">
-              <option v-for="img in imageList" :key="img.img_flnm" :value="img.img_flnm">
-                {{ img.img_flnm }}
-              </option>
-            </select>
+          <div class="form-group">
+            <label class="form-label">서약 내용 이미지</label>
+            <input :value="form.img_flnm ?? '이미지 없음'" class="form-input" disabled />
           </div>
-          <div v-else class="warning-box">서버에서 조회된 이미지 데이터가 없습니다.</div>
+          <div v-if="form.img_flnm" class="form-group">
+            <label class="form-label">이미지 미리보기</label>
+            <img
+              :src="`${BASE_URL}/images/${form.img_flnm}`"
+              :alt="form.img_flnm"
+              style="max-width:100%; border:1px solid #e2e8f0; border-radius:6px;"
+            />
+          </div>
+          <div v-else class="warning-box">등록된 이미지가 없습니다.</div>
         </template>
 
         <!-- SELF_CHECK: read-only questions -->
@@ -279,6 +283,7 @@
 
 <script setup lang="ts">
 import {
+  BASE_URL,
   fetchComplianceTasks,
   fetchTaskDates,
   fetchAllUsedDates,
@@ -368,14 +373,8 @@ async function openDetail(task: any) {
   const dates = await fetchTaskDates(task.task_id)
   tempDates.value = dates.map((d: any) => d.task_app_dt)
   pickedDate.value = todayStr()
-  usedDates.value = await fetchAllUsedDates()
-  imageList.value = await fetchTaskImages()
-  if (task.task_type === 'ETHICS' && imageList.value.length > 0) {
-    const saved = task.img_flnm
-    form.value.img_flnm = imageList.value.some((i) => i.img_flnm === saved)
-      ? saved
-      : imageList.value[0].img_flnm
-  }
+  const allUsed = await fetchAllUsedDates()
+  usedDates.value = allUsed.filter((d) => !tempDates.value.includes(d))
   if (task.task_type === 'SELF_CHECK') {
     const mappedCds = await fetchTaskQuestions(task.task_id)
     questionPool.value = await fetchQuestionPool()
@@ -399,6 +398,11 @@ function addDate() {
 }
 
 function removeDate(index: number) {
+  const d = tempDates.value[index]
+  if (d <= todayStr()) {
+    showToast('warning', '오늘 이전 날짜는 삭제할 수 없습니다.')
+    return
+  }
   tempDates.value.splice(index, 1)
 }
 
@@ -433,9 +437,6 @@ async function handleCreate() {
 async function handleUpdate() {
   if (tempDates.value.length === 0) { showToast('error', '최소 하나 이상의 적용 날짜가 유지되어야 합니다.'); return }
   if (!form.value.task_nm.trim()) { showToast('error', 'TASK 명은 비워둘 수 없습니다.'); return }
-  if (selectedTask.value?.task_type === 'ETHICS' && !form.value.img_flnm) {
-    showToast('error', '서약 이미지를 선택해야 합니다.'); return
-  }
   const payload = {
     task_id: Number(selectedTask.value.task_id),
     task_nm: form.value.task_nm,
