@@ -61,38 +61,34 @@
     >
       <!-- Stats Cards -->
       <div class="stats-row">
-        <div class="metric-card">
+        <div
+          class="metric-card"
+          :class="{ active: statusFilter === '전체' }"
+          @click="statusFilter = '전체'"
+        >
           <div class="metric-label">대상자 총원</div>
-          <div class="metric-value">{{ totalCount }} 명</div>
-          <div class="metric-sub">DB 등록 기준</div>
-          <button
-            class="btn btn-secondary btn-sm mt-8"
-            @click="statusFilter = '전체'"
-          >
-            전체 대상자 보기
-          </button>
+          <div class="metric-value">{{ totalCount }}명</div>
+          <div class="metric-sub">전체 대상자 보기</div>
         </div>
-        <div class="metric-card">
+        <div
+          class="metric-card"
+          :class="{ active: statusFilter === '완료' }"
+          @click="statusFilter = '완료'"
+        >
           <div class="metric-label">답변 완료</div>
-          <div class="metric-value yellow">{{ doneCount }} 명</div>
-          <div class="metric-sub green">(오늘 +{{ todayDone }}명 완료)</div>
-          <button
-            class="btn btn-secondary btn-sm mt-8"
-            @click="statusFilter = '완료'"
-          >
-            답변 완료자 보기
-          </button>
+          <div class="metric-value completed">{{ doneCount }}명</div>
+          <div class="metric-sub completed">
+            완료자 보기 (오늘 +{{ todayDone }}명 완료)
+          </div>
         </div>
-        <div class="metric-card">
-          <div class="metric-label">미답변(진행중)</div>
-          <div class="metric-value red">{{ pendingCount }} 명</div>
-          <div class="metric-sub">미답변자 {{ pendingCount }}명</div>
-          <button
-            class="btn btn-secondary btn-sm mt-8"
-            @click="statusFilter = '미완료'"
-          >
-            미답변자 보기
-          </button>
+        <div
+          class="metric-card"
+          :class="{ active: statusFilter === '미완료' }"
+          @click="statusFilter = '미완료'"
+        >
+          <div class="metric-label">미답변</div>
+          <div class="metric-value pending">{{ pendingCount }}명</div>
+          <div class="metric-sub pending">미답변자 보기</div>
         </div>
       </div>
     </template>
@@ -119,6 +115,14 @@
       <template v-if="filteredAnswers.length > 0">
         <div class="table-wrapper">
           <table class="data-table">
+            <colgroup>
+              <col style="width: 150px" />
+              <col style="width: auto" />
+              <col style="width: 130px" />
+              <col style="width: 100px" />
+              <col style="width: 100px" />
+              <col style="width: 200px" />
+            </colgroup>
             <thead>
               <tr>
                 <th>이름</th>
@@ -149,7 +153,7 @@
                     :class="
                       isAnswered(row)
                         ? 'badge badge-success'
-                        : 'badge badge-error'
+                        : 'badge badge-warning'
                     "
                   >
                     {{ isAnswered(row) ? "완료" : "미완료" }}
@@ -300,7 +304,7 @@ function handleRowClick(row: any) {
   }
 
   if (!isAnswered(row)) {
-    showToast("info", "해당 사원은 아직 답변을 완료하지 않았습니다.");
+    showToast("warning", "해당 사원은 아직 답변을 완료하지 않았습니다.");
     return;
   }
   router.push({

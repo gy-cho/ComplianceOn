@@ -12,6 +12,7 @@
   --error: #ff4b4b;
   --error-bg: #ffebee;
   --warning: #ffbb33;
+  --warning-bg: #fff8e1;
   --info: #33b5e5;
   --radius: 8px;
 }
@@ -86,15 +87,26 @@ body {
   color: var(--text-primary);
   font-size: 14px;
   line-height: 1.5;
+  scrollbar-gutter: stable;
 }
 
+input,
 button {
   font-family: "KBFGText", sans-serif;
 }
 
+th {
+  font-weight: normal;
+}
+
 /* ── Layout ── */
+.main-content {
+  overflow-x: auto;
+}
+
 .page-wrapper {
   max-width: 1100px;
+  min-width: 900px;
 }
 
 .page-header {
@@ -116,13 +128,12 @@ button {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 16px 20px;
-  margin-bottom: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
 }
 
 .card-section-title {
   font-size: 13px;
-  font-weight: 700;
   color: var(--text-secondary);
   margin-bottom: 12px;
 }
@@ -159,7 +170,6 @@ button {
 .form-label {
   display: block;
   font-size: 13px;
-  font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: 6px;
 }
@@ -322,6 +332,11 @@ button {
   color: #388e3c;
 }
 
+.badge-warning {
+  background: var(--warning-bg);
+  color: #e65100;
+}
+
 .badge-error {
   background: var(--error-bg);
   color: #d32f2f;
@@ -369,10 +384,28 @@ button {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 15px;
+  padding: 16px 18px;
   min-height: 110px;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+  border-color: #bbb;
+}
+
+.metric-card.active {
+  border-color: #60584c; /* KB Gray */
+  box-shadow: 0 4px 12px rgba(96, 88, 76, 0.12);
+}
+
+.metric-card.active:hover {
+  border-color: #545045; /* KB Dark Gray */
+  box-shadow: 0 6px 16px rgba(96, 88, 76, 0.18);
 }
 
 .metric-label {
@@ -382,10 +415,17 @@ button {
 }
 
 .metric-value {
-  font-size: 24px;
   font-weight: 700;
+  font-family: "KBFGDisplay";
+  font-size: 24px;
   margin-top: 4px;
   margin-bottom: 4px;
+}
+.metric-value.completed {
+  color: var(--success);
+}
+.metric-value.pending {
+  color: var(--error);
 }
 
 .metric-sub {
@@ -393,15 +433,11 @@ button {
   color: #999;
   flex: 1;
 }
-
-.metric-value.yellow {
-  color: var(--kb-yellow);
-}
-.metric-value.red {
-  color: var(--error);
-}
-.metric-sub.green {
+.metric-sub.completed {
   color: var(--success);
+}
+.metric-sub.pending {
+  color: var(--error);
 }
 
 /* ── Radio buttons ── */
