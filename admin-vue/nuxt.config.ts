@@ -7,7 +7,7 @@ export default defineNuxtConfig({
     head: {
       title: 'KB Compliance Admin',
       meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1' }],
-      link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
+      link: [{ rel: 'icon', type: 'image/x-icon', href: '/icon_favicon.ico' }],
     },
   },
   modules: ['@nuxt/icon'],

@@ -1,7 +1,7 @@
 <template>
   <Transition name="toast-fade">
     <div v-if="toast.visible" class="toast-wrap" :class="`toast-${toast.type}`">
-      <span class="toast-icon">{{ iconMap[toast.type] }}</span>
+      <Icon :name="iconMap[toast.type] || 'lucide:info'" class="toast-icon" />
       <span class="toast-msg">{{ toast.message }}</span>
     </div>
   </Transition>
@@ -10,11 +10,11 @@
 <script setup lang="ts">
 const { toast } = useToast()
 
-const iconMap = {
-  success: '✓',
-  error: '✕',
-  warning: '⚠',
-  info: 'ℹ',
+const iconMap: Record<string, string> = {
+  success: 'lucide:check-circle',
+  error: 'lucide:alert-circle',
+  warning: 'lucide:alert-triangle',
+  info: 'lucide:info',
 }
 </script>
 
@@ -45,8 +45,11 @@ const iconMap = {
 .toast-info    { background: #33b5e5; color: #fff; }
 
 .toast-icon {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 18px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .toast-fade-enter-active,
