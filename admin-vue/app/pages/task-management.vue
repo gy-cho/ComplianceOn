@@ -11,10 +11,15 @@
         <div class="card-section-title">■ 등록된 준법 TASK 현황 목록</div>
         <div v-if="taskList.length > 0" class="table-wrapper">
           <table class="data-table">
+            <colgroup>
+              <col />
+              <col style="width: 30%" />
+              <col style="width: 30%" />
+            </colgroup>
             <thead>
               <tr>
-                <th>TASK명</th>
-                <th>유형</th>
+                <th>TASK 명</th>
+                <th>TASK 유형</th>
                 <th>게시여부</th>
               </tr>
             </thead>
@@ -28,9 +33,7 @@
               >
                 <td>{{ t.task_nm }}</td>
                 <td>
-                  <span class="badge badge-yellow">{{
-                    typeLabel(t.task_type)
-                  }}</span>
+                  {{ typeLabel(t.task_type) }}
                 </td>
                 <td>
                   <span
@@ -70,7 +73,7 @@
             placeholder="예: 2026년 하반기 정보보안 서약 관리"
           />
         </div>
-        <div class="row" style="gap: 16px">
+        <div class="row">
           <div class="col-1">
             <label class="form-label">TASK 유형 선택</label>
             <select v-model="form.task_type" class="form-select">
@@ -105,7 +108,7 @@
         <p v-else class="text-muted mb-8">
           TASK를 배포하거나 강제 노출할 날짜를 추가하세요.
         </p>
-        <div class="row-center" style="gap: 10px; margin-bottom: 10px">
+        <div class="row-center" style="margin-block: 12px">
           <input
             type="date"
             v-model="pickedDate"
@@ -143,7 +146,7 @@
             </tbody>
           </table>
         </div>
-        <div v-else class="info-box mt-8">
+        <div v-else class="info-box">
           선택된 적용일이 없습니다. 날짜를 추가해 주세요.
         </div>
       </div>
@@ -211,13 +214,9 @@
       </div>
 
       <!-- Action buttons -->
-      <div class="row" style="gap: 10px; max-width: 320px">
-        <button class="btn btn-primary col-1" @click="handleCreate">
-          등록
-        </button>
-        <button class="btn btn-secondary col-1" @click="mode = 'list'">
-          취소
-        </button>
+      <div class="btns-area">
+        <button class="btn btn-primary" @click="handleCreate">등록</button>
+        <button class="btn btn-secondary" @click="mode = 'list'">취소</button>
       </div>
     </template>
 
@@ -234,7 +233,7 @@
           <label class="form-label">TASK 명</label>
           <input v-model="form.task_nm" class="form-input" />
         </div>
-        <div class="row" style="gap: 16px">
+        <div class="row">
           <div class="col-1">
             <label class="form-label">TASK 유형</label>
             <input
@@ -244,7 +243,7 @@
             />
           </div>
           <div class="col-1">
-            <label class="form-label">게시 상태 전환</label>
+            <label class="form-label">게시 여부 전환</label>
             <div class="radio-group" style="padding-top: 8px">
               <label class="radio-label">
                 <input type="radio" v-model="form.pbls_yn" value="Y" /> 게시
@@ -270,7 +269,7 @@
         <p v-else class="text-muted mb-8">
           날짜 추가 또는 체크 해제로 삭제 처리가 가능합니다.
         </p>
-        <div class="row-center" style="gap: 10px; margin-bottom: 10px">
+        <div class="row-center" style="margin-block: 12px">
           <input
             type="date"
             v-model="pickedDate"
@@ -354,10 +353,15 @@
           </p>
           <div v-if="detailQuestions.length > 0" class="table-wrapper">
             <table class="data-table">
+              <colgroup>
+                <col style="width: 10%" />
+                <col style="width: 20%" />
+                <col />
+              </colgroup>
               <thead>
                 <tr>
                   <th>질문 코드</th>
-                  <th>질문명</th>
+                  <th>질문 분류</th>
                   <th>질문 상세 내용</th>
                 </tr>
               </thead>
@@ -375,12 +379,10 @@
       </div>
 
       <!-- Action buttons -->
-      <div class="row" style="gap: 10px; max-width: 420px">
-        <button class="btn btn-primary col-1" @click="handleUpdate">
-          저장
-        </button>
-        <button class="btn btn-danger col-1" @click="handleDelete">삭제</button>
-        <button class="btn btn-secondary col-1" @click="mode = 'list'">
+      <div class="btns-area">
+        <button class="btn btn-primary" @click="handleUpdate">저장</button>
+        <button class="btn btn-danger" @click="handleDelete">삭제</button>
+        <button class="btn btn-secondary" @click="mode = 'list'">
           목록으로
         </button>
       </div>

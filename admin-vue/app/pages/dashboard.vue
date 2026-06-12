@@ -12,8 +12,8 @@
     <!-- Card 1: Task + AppSeq selection -->
     <div class="card">
       <div class="card-section-title">■ 준법 항목 및 적용일 선택</div>
-      <div class="row" style="gap: 12px">
-        <div style="flex: 2.5">
+      <div class="row-center">
+        <div style="flex: 3">
           <select
             v-model="selectedTaskId"
             class="form-select"
@@ -98,12 +98,12 @@
       v-if="selectedTaskId && selectedAppSeq !== null && !loading"
       class="card"
     >
-      <div class="row-center" style="gap: 12px; margin-bottom: 14px">
+      <div class="row-center" style="margin-bottom: 16px">
         <input
           v-model="searchText"
           class="form-input"
-          placeholder="이름, 사원번호 입력"
-          style="flex: 3.6"
+          placeholder="이름, 직원번호 입력"
+          style="flex: 3"
         />
         <select v-model="statusFilter" class="form-select" style="flex: 1">
           <option>전체</option>
@@ -304,7 +304,7 @@ function handleRowClick(row: any) {
   }
 
   if (!isAnswered(row)) {
-    showToast("warning", "해당 사원은 아직 답변을 완료하지 않았습니다.");
+    showToast("warning", "해당 직원은 아직 답변을 완료하지 않았습니다.");
     return;
   }
   router.push({

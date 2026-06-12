@@ -1,5 +1,5 @@
-export const BASE_URL = 'http://10.201.2.93:8080'
-// export const BASE_URL = 'http://192.168.62.94:8080';
+// export const BASE_URL = 'http://10.201.2.93:8080'
+export const BASE_URL = "http://192.168.62.94:8080";
 
 async function get<T>(path: string): Promise<T | null> {
   try {
