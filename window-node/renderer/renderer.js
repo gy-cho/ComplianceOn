@@ -6,8 +6,8 @@
 //   폰트 파일은 renderer.js 와 같은 폴더에 위치해야 합니다.
 // =========================================================================
 (function injectFont() {
-  const FONT_FILE   = 'OpenSans400.woff';  // ★ 폰트 파일명을 여기서 변경하세요
-  const FONT_FORMAT = 'woff';              // ★ 폰트 형식을 여기서 변경하세요 (woff / woff2)
+  const FONT_FILE   = 'fonts/KBFGTextM.woff2';  // ★ 폰트 파일명을 여기서 변경하세요
+  const FONT_FORMAT = 'woff2';              // ★ 폰트 형식을 여기서 변경하세요 (woff / woff2)
   const FONT_FAMILY = 'AppFont';
 
   const style = document.createElement('style');
@@ -151,11 +151,11 @@ function showApp(v)         { document.getElementById('app-container').style.dis
  * @param {string} title   - 제목
  * @param {string} message - 본문 (개행 \n 지원)
  * @param {'ok'|'yesno'} type - 버튼 종류
- * @returns {Promise<boolean>} ok/예 → true, 아니오 → false
+ * @param {object} [btnLabels] - 버튼명 커스텀 (예: { yes: '제출', no: '다시작성' })
+ * @returns {Promise<boolean>} ok/yes → true, no → false
  */
-function showInappModal(title, message, type = 'ok') {
+function showInappModal(title, message, type = 'ok', btnLabels = {}) {
   return new Promise(resolve => {
-    // 기존 모달 제거
     const old = document.getElementById('inapp-modal-backdrop');
     if (old) old.remove();
 
@@ -184,12 +184,12 @@ function showInappModal(title, message, type = 'ok') {
     if (type === 'yesno') {
       const noBtn = document.createElement('button');
       noBtn.className = 'inapp-modal-btn inapp-modal-btn-secondary';
-      noBtn.textContent = '아니오';
+      noBtn.textContent = btnLabels.no ?? '아니오';
       noBtn.addEventListener('click', () => close(false));
 
       const yesBtn = document.createElement('button');
       yesBtn.className = 'inapp-modal-btn inapp-modal-btn-primary';
-      yesBtn.textContent = '예';
+      yesBtn.textContent = btnLabels.yes ?? '예';
       yesBtn.addEventListener('click', () => close(true));
 
       btnRow.appendChild(noBtn);
@@ -197,7 +197,7 @@ function showInappModal(title, message, type = 'ok') {
     } else {
       const okBtn = document.createElement('button');
       okBtn.className = 'inapp-modal-btn inapp-modal-btn-primary';
-      okBtn.textContent = '확인';
+      okBtn.textContent = btnLabels.ok ?? '확인';
       okBtn.addEventListener('click', () => close(true));
       btnRow.appendChild(okBtn);
     }
@@ -768,8 +768,9 @@ async function onAgree() {
     if (!isAllCorrect) {
       const confirmed = await showInappModal(
         '자가점검 재확인',
-        '보안 지침에 위배되는 답변 항목이 존재합니다.\n이대로 점검 결과를 제출하시겠습니까?',
-        'yesno'
+        '내부통제기준에 위배되는 답변 항목이 존재합니다.\n잘못 답변한 경우 [다시작성] 버튼을 선택해주시고,\n답변 내용이 사실과 일치하는 경우 [제출] 버튼을 선택해 주시기 바랍니다.',
+        'yesno',
+        { yes: '제출', no: '다시작성' }
       );
       if (!confirmed) return;
     }
@@ -800,7 +801,7 @@ async function onAgree() {
     const resData = await response.json().catch(() => ({}));
 
     if (response.status === 200) {
-      await showInappModal('알림', resData.message || '준법 프로그램 수행 기록이 정상적으로 저장되었습니다.');
+      await showInappModal('알림', resData.message || '점검 결과가 저장되었습니다.');
       terminateProgram();
     } else if ([400, 404, 500].includes(response.status)) {
       await showInappModal('제출 실패', resData.message || '알 수 없는 오류');
