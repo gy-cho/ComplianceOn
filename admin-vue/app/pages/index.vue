@@ -9,24 +9,30 @@
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
           <label class="form-label">아이디</label>
-          <input
-            v-model="username"
-            type="text"
-            class="form-input"
-            placeholder="admin"
-            autocomplete="username"
-          />
+          <div class="input-icon-wrap">
+            <Icon name="lucide:user" class="input-icon" />
+            <input
+              v-model="username"
+              type="text"
+              class="form-input has-icon"
+              placeholder="admin"
+              autocomplete="username"
+            />
+          </div>
         </div>
 
         <div class="form-group">
           <label class="form-label">비밀번호</label>
-          <input
-            v-model="password"
-            type="password"
-            class="form-input"
-            placeholder="비밀번호를 입력하세요"
-            autocomplete="current-password"
-          />
+          <div class="input-icon-wrap">
+            <Icon name="lucide:lock" class="input-icon" />
+            <input
+              v-model="password"
+              type="password"
+              class="form-input has-icon"
+              placeholder="비밀번호를 입력하세요"
+              autocomplete="current-password"
+            />
+          </div>
         </div>
 
         <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>

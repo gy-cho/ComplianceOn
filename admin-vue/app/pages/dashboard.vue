@@ -99,17 +99,21 @@
       class="card"
     >
       <div class="row-center" style="margin-bottom: 16px">
-        <input
-          v-model="searchText"
-          class="form-input"
-          placeholder="이름, 직원번호 입력"
-          style="flex: 3"
-        />
-        <select v-model="statusFilter" class="form-select" style="flex: 1">
-          <option>전체</option>
-          <option>완료</option>
-          <option>미완료</option>
-        </select>
+        <div class="input-icon-wrap" style="flex: 3">
+          <Icon name="lucide:search" class="input-icon" />
+          <input
+            v-model="searchText"
+            class="form-input has-icon"
+            placeholder="직원명, 직원번호 입력"
+          />
+        </div>
+        <div style="flex: 1">
+          <select v-model="statusFilter" class="form-select">
+            <option>전체</option>
+            <option>완료</option>
+            <option>미완료</option>
+          </select>
+        </div>
       </div>
 
       <template v-if="filteredAnswers.length > 0">
@@ -125,9 +129,9 @@
             </colgroup>
             <thead>
               <tr>
-                <th>이름</th>
+                <th>직원명</th>
                 <th>준법명</th>
-                <th>IP</th>
+                <th>IP 주소</th>
                 <th>답변여부</th>
                 <th>정상답변여부</th>
                 <th>답변일시</th>
