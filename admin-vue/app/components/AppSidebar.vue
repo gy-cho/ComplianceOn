@@ -74,7 +74,7 @@ function logout() {
 }
 
 .logo-area {
-  padding: 20px;
+  padding: 24px 20px;
   border-bottom: 1px solid #f0f0f0;
   display: flex;
   align-items: center;
@@ -132,7 +132,7 @@ function logout() {
 }
 
 .sidebar-bottom {
-  padding: 10px 10px 20px;
+  padding: 10px;
   border-top: 1px solid #f0f0f0;
 }
 

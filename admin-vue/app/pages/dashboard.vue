@@ -78,7 +78,7 @@
           <div class="metric-label">답변 완료</div>
           <div class="metric-value completed">{{ doneCount }}명</div>
           <div class="metric-sub completed">
-            완료자 보기 (오늘 +{{ todayDone }}명 완료)
+            완료자 보기 (오늘 +{{ todayDone }}명)
           </div>
         </div>
         <div

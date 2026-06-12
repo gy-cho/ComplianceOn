@@ -371,6 +371,12 @@ th {
   font-size: 13px;
   margin-bottom: 10px;
 }
+.warning-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
 
 /* ── Stats Cards row ── */
 .stats-row {
