@@ -2,7 +2,7 @@
   <aside class="sidebar">
     <div class="sidebar-top">
       <div class="logo-area">
-        <img src="/kbds_logo.svg" alt="KBDS" class="logo-img" />
+        <img src="/kbds_logo_white.svg" alt="KBDS" class="logo-img" />
       </div>
 
       <nav class="nav-menu">
@@ -44,6 +44,9 @@ const menuItems = [
 ];
 
 function isActive(path: string) {
+  if (path === "/dashboard") {
+    return route.path === "/dashboard" || route.path === "/detail";
+  }
   return route.path === path;
 }
 
@@ -57,8 +60,8 @@ function logout() {
 .sidebar {
   width: 220px;
   min-height: 100vh;
-  background: #ffffff;
-  border-right: 1px solid #e0e0e0;
+  background: #1e222f; /* Deep dark navy */
+  border-right: 1px solid #151821;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -75,7 +78,7 @@ function logout() {
 
 .logo-area {
   padding: 24px 20px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #282d3f;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -83,7 +86,7 @@ function logout() {
 
 .logo-img {
   max-width: 160px;
-  max-height: 52px;
+  max-height: 50px;
   object-fit: contain;
 }
 
@@ -91,35 +94,44 @@ function logout() {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 12px 10px;
+  padding: 12px 0; /* Align buttons directly to the left edge */
 }
 
 .nav-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
-  padding: 10px 14px;
+  padding: 12px 20px;
   background: transparent;
   border: none;
-  border-radius: 6px;
+  border-left: 3px solid transparent;
+  border-radius: 0;
   font-size: 14px;
   font-weight: 500;
-  color: #444;
+  color: #98a2b3; /* Muted gray/silver */
   cursor: pointer;
   text-align: left;
-  transition:
-    background 0.18s,
-    color 0.18s;
+  transition: all 0.2s ease;
 }
 
 .nav-btn:hover {
-  background: #f5f5f5;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.nav-btn:hover .nav-icon {
+  color: #ffffff;
 }
 
 .nav-btn.active {
-  background: #ffbc00;
-  color: #222;
+  background: #252a37; /* Solid charcoal slate-blue highlight */
+  color: #ffbc00; /* KB Yellow Positive */
+  border-left-color: #ffbc00; /* KB Yellow Positive left border */
+}
+
+.nav-btn.active .nav-icon {
+  color: #ffbc00;
 }
 
 .nav-icon {
@@ -129,19 +141,20 @@ function logout() {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  color: inherit;
 }
 
 .sidebar-bottom {
-  padding: 10px;
-  border-top: 1px solid #f0f0f0;
+  padding: 12px 0;
+  border-top: 1px solid #282d3f;
 }
 
 .logout-btn {
-  color: #888;
+  color: #98a2b3;
 }
 
 .logout-btn:hover {
-  background: #fff0f0;
-  color: #c00;
+  background: rgba(244, 67, 54, 0.1);
+  color: #ff5252;
 }
 </style>

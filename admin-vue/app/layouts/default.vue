@@ -2,6 +2,7 @@
   <div class="admin-layout">
     <AppSidebar />
     <main class="main-content">
+      <AppBreadcrumb />
       <slot />
     </main>
   </div>
