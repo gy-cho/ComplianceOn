@@ -290,7 +290,6 @@ button {
   text-align: left;
   background: #f8f8f8;
   border-bottom: 2px solid var(--border);
-  font-weight: 600;
   color: var(--text-secondary);
   white-space: nowrap;
 }
@@ -316,7 +315,6 @@ button {
   padding: 2px 9px;
   border-radius: 10px;
   font-size: 12px;
-  font-weight: 600;
 }
 
 .badge-success {
@@ -379,7 +377,6 @@ button {
 
 .metric-label {
   font-size: 14px;
-  font-weight: 600;
   color: #666;
   margin-bottom: 4px;
 }
