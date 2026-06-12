@@ -2,16 +2,12 @@
   <div class="page-wrapper">
     <!-- Header -->
     <div class="page-header">
-      <span class="page-title">답변 상세</span>
+      <span class="page-title">{{ empNm }} ({{ empNo }}) 답변 상세 내역</span>
       <button class="btn btn-secondary" @click="goBack">목록으로</button>
     </div>
 
     <!-- Employee info card -->
-    <div class="card">
-      <div class="card-section-title">
-        ■ {{ empNm }} ({{ empNo }}) 상세 정보
-      </div>
-
+    <div>
       <div v-if="loading" class="spinner-wrap">
         상세 데이터를 불러오는 중...
       </div>
@@ -106,7 +102,6 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  margin-top: 10px;
 }
 
 .qa-card {

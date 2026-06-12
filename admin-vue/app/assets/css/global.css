@@ -83,11 +83,11 @@ body {
     "Noto Sans KR",
     Roboto,
     sans-serif;
+  font-weight: 300;
   background-color: var(--bg-page);
   color: var(--text-primary);
   font-size: 14px;
   line-height: 1.5;
-  scrollbar-gutter: stable;
 }
 
 input,
@@ -126,11 +126,40 @@ th {
 
 /* ── Card ── */
 .card {
+  padding: 20px;
+  margin-bottom: 20px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 20px;
+}
+
+.card.card-has-head {
+  padding-top: 0;
+}
+
+.card-section-head {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  margin: 0 -20px 20px;
+  background-color: #f7f6f3; /* KB Brand warm gray shade */
+  border-bottom: 1px solid #e5e3df;
+  border-top-left-radius: 9px;
+  border-top-right-radius: 9px;
+  font-family: "KBFGDisplay", sans-serif;
+  font-size: 15px;
+  color: #3b3730;
+}
+
+.card-section-head::before {
+  content: "";
+  display: block;
+  width: 4px;
+  height: 14px;
+  background-color: var(--kb-yellow);
+  border-radius: 2px;
+  margin-right: 10px;
+  flex-shrink: 0;
 }
 
 .card-section-title {
@@ -296,8 +325,9 @@ th {
 /* ── Data Table ── */
 .table-wrapper {
   overflow-x: auto;
-  border-radius: 6px;
+  background-color: #fff;
   border: 1px solid #eee;
+  border-radius: 6px;
 }
 
 .data-table {
@@ -363,6 +393,11 @@ th {
   color: #e65100;
 }
 
+.badge-info {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
 /* ── Info / Empty state ── */
 .info-box {
   padding: 12px 16px;
@@ -393,7 +428,7 @@ th {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .metric-card {
@@ -538,8 +573,9 @@ th {
   margin: 12px 0;
 }
 
-/* ── Checkbox ── */
-input[type="checkbox"] {
+/* ── Checkbox & Radio ── */
+input[type="checkbox"],
+input[type="radio"] {
   accent-color: var(--kb-yellow);
   width: 15px;
   height: 15px;

@@ -2,12 +2,12 @@
   <div class="page-wrapper">
     <!-- Header -->
     <div class="page-header">
-      <span class="page-title">직원 관리</span>
+      <span class="page-title">준법 관리 대상 직원 목록</span>
       <div class="row-center">
         <button class="btn btn-primary" @click="showAddModal = true">
-          직원 추가
+          직원 등록
         </button>
-        <button class="btn btn-secondary" @click="handleDeleteSelected">
+        <button class="btn btn-danger" @click="handleDeleteSelected">
           선택 삭제
         </button>
       </div>
@@ -15,7 +15,6 @@
 
     <!-- Employee Table -->
     <div class="card">
-      <div class="card-section-title">■ 준법 관리 대상 사용자 목록</div>
       <template v-if="employees.length > 0">
         <div class="table-wrapper">
           <table class="data-table">
@@ -71,7 +70,7 @@
           <input
             v-model="addForm.emp_no"
             class="form-input"
-            placeholder="예: 20261002"
+            placeholder="예: D260101"
           />
         </div>
         <div class="form-group">

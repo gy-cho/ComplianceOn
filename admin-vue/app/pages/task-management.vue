@@ -3,12 +3,11 @@
     <!-- ═══════════════════════════════════════════════════════ LIST MODE -->
     <template v-if="mode === 'list'">
       <div class="page-header">
-        <span class="page-title">준법 TASK</span>
+        <span class="page-title">준법 TASK 현황 목록</span>
         <button class="btn btn-primary" @click="openCreate">TASK 등록</button>
       </div>
 
       <div class="card">
-        <div class="card-section-title">■ 등록된 준법 TASK 현황 목록</div>
         <div v-if="taskList.length > 0" class="table-wrapper">
           <table class="data-table">
             <colgroup>
@@ -59,12 +58,12 @@
     <!-- ═══════════════════════════════════════════════════════ CREATE MODE -->
     <template v-else-if="mode === 'create'">
       <div class="page-header">
-        <span class="page-title">새 준법 TASK 등록</span>
+        <span class="page-title">새 TASK 등록</span>
       </div>
 
       <!-- Basic Info -->
-      <div class="card">
-        <div class="card-section-title">■ 기본 정보 및 정책 설정</div>
+      <div class="card card-has-head">
+        <div class="card-section-head">기본 정보 및 정책 설정</div>
         <div class="form-group">
           <label class="form-label">TASK 명</label>
           <input
@@ -96,8 +95,8 @@
       </div>
 
       <!-- Dates -->
-      <div class="card">
-        <div class="card-section-title">■ TASK 적용일 설정</div>
+      <div class="card card-has-head">
+        <div class="card-section-head">TASK 적용일 설정</div>
         <div v-if="usedDates.length > 0" class="warning-box">
           <p class="warning-line">
             <Icon name="lucide:alert-triangle" />
@@ -108,19 +107,15 @@
         <p v-else class="text-muted mb-8">
           TASK를 배포하거나 강제 노출할 날짜를 추가하세요.
         </p>
-        <div class="row-center" style="margin-block: 12px">
+        <div class="row-center">
           <input
             type="date"
             v-model="pickedDate"
             :min="todayStr()"
             style="flex: 1"
           />
-          <button
-            class="btn btn-secondary"
-            style="width: 90px"
-            @click="addDate"
-          >
-            날짜 추가
+          <button class="btn btn-secondary" @click="addDate">
+            <Icon name="lucide:plus" /> 날짜 추가
           </button>
         </div>
         <div v-if="tempDates.length > 0" class="table-wrapper">
@@ -152,8 +147,8 @@
       </div>
 
       <!-- Content -->
-      <div class="card">
-        <div class="card-section-title">■ 상세 본문 및 문항 매핑 설정</div>
+      <div class="card card-has-head">
+        <div class="card-section-head">상세 본문 및 문항 매핑 설정</div>
 
         <!-- ETHICS: image select -->
         <template v-if="form.task_type === 'ETHICS'">
@@ -223,12 +218,12 @@
     <!-- ═══════════════════════════════════════════════════════ DETAIL MODE -->
     <template v-else-if="mode === 'detail' && selectedTask">
       <div class="page-header">
-        <span class="page-title">준법 TASK 상세정보 수정</span>
+        <span class="page-title">TASK 상세 정보</span>
       </div>
 
       <!-- Basic Info -->
-      <div class="card">
-        <div class="card-section-title">■ 기본 정보 및 정책 설정</div>
+      <div class="card card-has-head">
+        <div class="card-section-head">기본 정보 및 정책 설정</div>
         <div class="form-group">
           <label class="form-label">TASK 명</label>
           <input v-model="form.task_nm" class="form-input" />
@@ -257,8 +252,8 @@
       </div>
 
       <!-- Dates -->
-      <div class="card">
-        <div class="card-section-title">■ TASK 적용일 편집</div>
+      <div class="card card-has-head">
+        <div class="card-section-head">TASK 적용일 편집</div>
         <div v-if="otherUsedDates.length > 0" class="warning-box">
           <p class="warning-line">
             <Icon name="lucide:alert-triangle" />
@@ -269,19 +264,15 @@
         <p v-else class="text-muted mb-8">
           날짜 추가 또는 체크 해제로 삭제 처리가 가능합니다.
         </p>
-        <div class="row-center" style="margin-block: 12px">
+        <div class="row-center">
           <input
             type="date"
             v-model="pickedDate"
             :min="todayStr()"
             style="flex: 1"
           />
-          <button
-            class="btn btn-secondary"
-            style="width: 90px"
-            @click="addDate"
-          >
-            날짜 추가
+          <button class="btn btn-secondary" @click="addDate">
+            <Icon name="lucide:plus" /> 날짜 추가
           </button>
         </div>
         <div v-if="tempDates.length > 0" class="table-wrapper">
@@ -312,8 +303,8 @@
       </div>
 
       <!-- Content -->
-      <div class="card">
-        <div class="card-section-title">■ 상세 본문 및 문항 매핑 현황</div>
+      <div class="card card-has-head">
+        <div class="card-section-head">상세 본문 및 문항 매핑 현황</div>
 
         <!-- ETHICS: image view-only -->
         <template v-if="selectedTask.task_type === 'ETHICS'">
@@ -623,3 +614,9 @@ async function handleDelete() {
 
 onMounted(loadList);
 </script>
+
+<style scoped>
+.row-center {
+  margin: 12px 0;
+}
+</style>

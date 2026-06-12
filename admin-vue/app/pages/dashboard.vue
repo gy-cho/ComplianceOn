@@ -10,8 +10,8 @@
     </div>
 
     <!-- Card 1: Task + AppSeq selection -->
-    <div class="card">
-      <div class="card-section-title">■ 준법 항목 및 적용일 선택</div>
+    <div class="card card-has-head">
+      <div class="card-section-head">준법 항목 및 적용일 선택</div>
       <div class="row-center">
         <div style="flex: 3">
           <select
@@ -163,9 +163,7 @@
                   <span
                     v-if="isAnswered(row)"
                     :class="
-                      isAgreed(row)
-                        ? 'badge badge-success'
-                        : 'badge badge-error'
+                      isAgreed(row) ? 'badge badge-info' : 'badge badge-error'
                     "
                   >
                     {{ isAgreed(row) ? "정상" : "비정상" }}
