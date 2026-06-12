@@ -495,7 +495,7 @@ function buildSelfCheckOverlay(wrapper, bgImg, qstnList) {
       pointer-events:none;
     `;
 
-    // 내용 (qstn_cn) — 폰트 크기 14px 고정, 번호와 동일 굵기·색상
+    // 내용 (qstn_cn) — 번호와 동일한 폰트 크기·굵기·색상
     const contentEl = document.createElement('div');
     contentEl.className = 'question-content';
     contentEl.dataset.qcd = qCd;
@@ -505,7 +505,7 @@ function buildSelfCheckOverlay(wrapper, bgImg, qstnList) {
       top:${currentY}px;
       left:${textLeftX + Math.round(titleFontSize * 2.2)}px;
       max-width:${Math.round(renderW * 0.60)}px;
-      font-size:14px;
+      font-size:${titleFontSize}px;
       font-weight:700;
       color:#1a1a1a;
       pointer-events:none;
@@ -517,7 +517,7 @@ function buildSelfCheckOverlay(wrapper, bgImg, qstnList) {
     radioGroup.dataset.qcd = qCd;
     radioGroup.style.cssText = `
       position:absolute;
-      top:${currentY + Math.round(titleFontSize * 1.4)}px;
+      top:${currentY}px;
       left:${radioYesX}px;
       display:flex;
       gap:${Math.round(20*scale)}px;
@@ -725,12 +725,12 @@ function repositionSelfCheckOverlay(bgImg) {
     if (qContentEl) {
       qContentEl.style.top      = `${currentY}px`;
       qContentEl.style.left     = `${textLeftX + Math.round(titleFontSize * 2.2)}px`;
-      qContentEl.style.fontSize = `14px`;
+      qContentEl.style.fontSize = `${titleFontSize}px`;
     }
 
     const radioGroup = overlay.querySelector(`.radio-group[data-qcd="${qCd}"]`);
     if (radioGroup) {
-      radioGroup.style.top  = `${currentY + Math.round(titleFontSize * 1.4)}px`;
+      radioGroup.style.top  = `${currentY}px`;
       radioGroup.style.left = `${radioYesX}px`;
       radioGroup.style.gap  = `${Math.round(20*scale)}px`;
       // 라디오 크기
