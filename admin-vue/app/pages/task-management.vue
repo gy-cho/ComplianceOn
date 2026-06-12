@@ -4,7 +4,7 @@
     <template v-if="mode === 'list'">
       <div class="page-header">
         <span class="page-title">준법 TASK</span>
-        <button class="btn btn-primary" @click="openCreate">등록</button>
+        <button class="btn btn-primary" @click="openCreate">TASK 등록</button>
       </div>
 
       <div class="card">
@@ -40,7 +40,7 @@
                         : 'badge badge-gray'
                     "
                   >
-                    {{ t.pbls_yn }}
+                    {{ t.pbls_yn === "Y" ? "게시중" : "미게시" }}
                   </span>
                 </td>
               </tr>
@@ -82,10 +82,10 @@
             <label class="form-label">즉시 게시 여부</label>
             <div class="radio-group" style="padding-top: 8px">
               <label class="radio-label">
-                <input type="radio" v-model="form.pbls_yn" value="Y" /> Y
+                <input type="radio" v-model="form.pbls_yn" value="Y" /> 게시
               </label>
               <label class="radio-label">
-                <input type="radio" v-model="form.pbls_yn" value="N" /> N
+                <input type="radio" v-model="form.pbls_yn" value="N" /> 미게시
               </label>
             </div>
           </div>
@@ -96,8 +96,11 @@
       <div class="card">
         <div class="card-section-title">■ TASK 적용일 설정</div>
         <div v-if="usedDates.length > 0" class="warning-box">
-          ⚠️ 선택 불가 안내: 다음 날짜들은 이미 다른 TASK에서 사용 중입니다.<br />
-          <code>{{ usedDates.join(", ") }}</code>
+          <p class="warning-line">
+            <Icon name="lucide:alert-triangle" />
+            선택 불가 안내: 다음 날짜들은 이미 다른 TASK에서 사용 중입니다.
+          </p>
+          <p style="padding-left: 20px">{{ usedDates.join(", ") }}</p>
         </div>
         <p v-else class="text-muted mb-8">
           TASK를 배포하거나 강제 노출할 날짜를 추가하세요.
@@ -131,7 +134,7 @@
                   <input
                     type="checkbox"
                     :id="`del-c-${i}`"
-                    :disabled="d <= todayStr()" 
+                    :disabled="d <= todayStr()"
                     @change="removeDate(i)"
                   />
                 </td>
@@ -221,7 +224,7 @@
     <!-- ═══════════════════════════════════════════════════════ DETAIL MODE -->
     <template v-else-if="mode === 'detail' && selectedTask">
       <div class="page-header">
-        <span class="page-title">준법 TASK 상세 정보 수정</span>
+        <span class="page-title">준법 TASK 상세정보 수정</span>
       </div>
 
       <!-- Basic Info -->
@@ -244,10 +247,10 @@
             <label class="form-label">게시 상태 전환</label>
             <div class="radio-group" style="padding-top: 8px">
               <label class="radio-label">
-                <input type="radio" v-model="form.pbls_yn" value="Y" /> Y
+                <input type="radio" v-model="form.pbls_yn" value="Y" /> 게시
               </label>
               <label class="radio-label">
-                <input type="radio" v-model="form.pbls_yn" value="N" /> N
+                <input type="radio" v-model="form.pbls_yn" value="N" /> 미게시
               </label>
             </div>
           </div>
@@ -258,8 +261,11 @@
       <div class="card">
         <div class="card-section-title">■ TASK 적용일 편집</div>
         <div v-if="otherUsedDates.length > 0" class="warning-box">
-          ⚠️ 선택 불가 안내: 다음 날짜들은 다른 TASK에서 사용 중입니다.<br />
-          <code>{{ otherUsedDates.join(", ") }}</code>
+          <p class="warning-line">
+            <Icon name="lucide:alert-triangle" />
+            선택 불가 안내: 다음 날짜들은 다른 TASK에서 사용 중입니다.
+          </p>
+          <p style="padding-left: 20px">{{ otherUsedDates.join(", ") }}</p>
         </div>
         <p v-else class="text-muted mb-8">
           날짜 추가 또는 체크 해제로 삭제 처리가 가능합니다.
@@ -290,7 +296,11 @@
             <tbody>
               <tr v-for="(d, i) in tempDates" :key="d">
                 <td>
-                  <input type="checkbox" :disabled="d <= todayStr()" @change="removeDate(i)" />
+                  <input
+                    type="checkbox"
+                    :disabled="d <= todayStr()"
+                    @change="removeDate(i)"
+                  />
                 </td>
                 <td>{{ d }}</td>
               </tr>
@@ -328,7 +338,11 @@
             <img
               :src="`${BASE_URL}/images/${form.img_flnm}`"
               :alt="form.img_flnm"
-              style="max-width:100%; border:1px solid #e2e8f0; border-radius:6px;"
+              style="
+                max-width: 100%;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+              "
             />
           </div>
         </template>
@@ -511,10 +525,10 @@ function addDate() {
 }
 
 function removeDate(index: number) {
-  const d = tempDates.value[index]
+  const d = tempDates.value[index];
   if (d <= todayStr()) {
-    showToast('warning', '오늘 이전 날짜는 삭제할 수 없습니다.')
-    return
+    showToast("warning", "오늘 이전 날짜는 삭제할 수 없습니다.");
+    return;
   }
   tempDates.value.splice(index, 1);
 }

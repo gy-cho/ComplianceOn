@@ -2,7 +2,7 @@
   <aside class="sidebar">
     <div class="sidebar-top">
       <div class="logo-area">
-        <img src="/kbds_logo.png" alt="KBDS" class="logo-img" />
+        <img src="/kbds_logo.svg" alt="KBDS" class="logo-img" />
       </div>
 
       <nav class="nav-menu">
@@ -74,7 +74,7 @@ function logout() {
 }
 
 .logo-area {
-  padding: 18px 20px 16px;
+  padding: 24px 20px;
   border-bottom: 1px solid #f0f0f0;
   display: flex;
   align-items: center;
@@ -132,7 +132,7 @@ function logout() {
 }
 
 .sidebar-bottom {
-  padding: 10px 10px 20px;
+  padding: 10px;
   border-top: 1px solid #f0f0f0;
 }
 

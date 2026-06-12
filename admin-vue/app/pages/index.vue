@@ -2,9 +2,9 @@
   <div class="login-wrapper">
     <div class="login-card">
       <div class="login-logo">
-        <img src="/kbds_logo.png" alt="KBDS" class="login-logo-img" />
+        <img src="/kbds_logo.svg" alt="KBDS" class="login-logo-img" />
       </div>
-      <h2 class="login-title">🔐 시스템 로그인</h2>
+      <h2 class="login-title">시스템 로그인</h2>
 
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
@@ -40,22 +40,22 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: 'auth', middleware: 'auth' })
+definePageMeta({ layout: "auth", middleware: "auth" });
 
-const router = useRouter()
-const loggedIn = useCookie('kb_logged_in', { maxAge: 60 * 60 * 24 * 7 })
+const router = useRouter();
+const loggedIn = useCookie("kb_logged_in", { maxAge: 60 * 60 * 24 * 7 });
 
-const username = ref('')
-const password = ref('')
-const errorMsg = ref('')
+const username = ref("");
+const password = ref("");
+const errorMsg = ref("");
 
 function handleLogin() {
-  errorMsg.value = ''
-  if (username.value === 'admin' && password.value === 'kbdata1!') {
-    loggedIn.value = 'true'
-    router.push('/dashboard')
+  errorMsg.value = "";
+  if (username.value === "admin" && password.value === "kbdata1!") {
+    loggedIn.value = "true";
+    router.push("/dashboard");
   } else {
-    errorMsg.value = '아이디 또는 비밀번호가 일치하지 않습니다.'
+    errorMsg.value = "아이디 또는 비밀번호가 일치하지 않습니다.";
   }
 }
 </script>
@@ -93,8 +93,9 @@ function handleLogin() {
 }
 
 .login-title {
-  font-size: 20px;
   font-weight: 700;
+  font-family: "KBFGDisplay";
+  font-size: 20px;
   text-align: center;
   color: #222;
   margin-bottom: 24px;
