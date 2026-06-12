@@ -13,7 +13,9 @@
           :class="{ active: isActive(item.path) }"
           @click="navigateTo(item.path)"
         >
-          <span class="nav-icon">{{ item.icon }}</span>
+          <span class="nav-icon">
+            <Icon :name="item.icon" />
+          </span>
           {{ item.label }}
         </button>
       </nav>
@@ -21,7 +23,9 @@
 
     <div class="sidebar-bottom">
       <button class="nav-btn logout-btn" @click="logout">
-        <span class="nav-icon">🔐</span>
+        <span class="nav-icon">
+          <Icon name="lucide:log-out" />
+        </span>
         로그아웃
       </button>
     </div>
@@ -29,23 +33,23 @@
 </template>
 
 <script setup lang="ts">
-const route = useRoute()
-const router = useRouter()
-const loggedIn = useCookie('kb_logged_in')
+const route = useRoute();
+const router = useRouter();
+const loggedIn = useCookie("kb_logged_in");
 
 const menuItems = [
-  { path: '/dashboard', icon: '📊', label: '현황 조회' },
-  { path: '/employee-management', icon: '📁', label: '직원 관리' },
-  { path: '/task-management', icon: '📈', label: '콘텐츠 관리' },
-]
+  { path: "/dashboard", icon: "lucide:layout-grid", label: "현황 조회" },
+  { path: "/employee-management", icon: "lucide:users", label: "직원 관리" },
+  { path: "/task-management", icon: "lucide:shield-check", label: "준법 TASK" },
+];
 
 function isActive(path: string) {
-  return route.path === path
+  return route.path === path;
 }
 
 function logout() {
-  loggedIn.value = null
-  router.push('/')
+  loggedIn.value = null;
+  router.push("/");
 }
 </script>
 
@@ -104,7 +108,9 @@ function logout() {
   color: #444;
   cursor: pointer;
   text-align: left;
-  transition: background 0.18s, color 0.18s;
+  transition:
+    background 0.18s,
+    color 0.18s;
 }
 
 .nav-btn:hover {
@@ -112,15 +118,16 @@ function logout() {
 }
 
 .nav-btn.active {
-  background: #FFBC00;
+  background: #ffbc00;
   color: #222;
-  font-weight: 700;
 }
 
 .nav-icon {
   font-size: 16px;
   width: 20px;
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
