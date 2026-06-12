@@ -336,7 +336,8 @@ public class ComplianceController {
                         " WHERE TASK.TASK_ID = CTAD.TASK_ID "+
                         " AND CTAD.TASK_APP_DT = TO_DATE(:todayDate, 'YYYY-MM-DD')"+
                         " AND (TASK.DEL_YN = 'N' OR TASK.DEL_YN = NULL) "+
-                        " AND (CTAD.DEL_YN = 'N' OR CTAD.DEL_YN = NULL)";
+                        " AND (CTAD.DEL_YN = 'N' OR CTAD.DEL_YN = NULL)" +
+                        " AND TASK.PBLS_YN = 'Y'";
                 results = jdbcTemplate.queryForList(query, params);
 
                 for (Map<String, Object> result : results) {
@@ -346,7 +347,7 @@ public class ComplianceController {
                     MapSqlParameterSource logParams = new MapSqlParameterSource()
                             .addValue("taskId", result.get("task_id"))
                             .addValue("appSeq", result.get("app_seq"))
-                            .addValue("empNo", result.get("emp_no"));
+                            .addValue("empNo", empNo);
                     List<Map<String, Object>> logs = jdbcTemplate.queryForList(logCheckQuery, logParams);
 
                     if (!logs.isEmpty()) {
@@ -522,8 +523,8 @@ public class ComplianceController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
         }
     }
-    
-    // 📌 수정: 특정 TASK의 날짜는 제외하고 반환 (편집 시 자기 자신 날짜 선택 가능하도록)
+
+    // 📌 사용중인 날짜 조회 API
     @GetMapping("/get-all-used-dates")
     public ResponseEntity<?> getAllUsedDates(
             @RequestParam(value = "exclude_task_id", required = false) Integer excludeTaskId) {
