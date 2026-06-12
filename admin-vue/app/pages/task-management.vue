@@ -7,8 +7,11 @@
         <button class="btn btn-primary" @click="openCreate">TASK 등록</button>
       </div>
 
-      <div class="card">
-        <div v-if="taskList.length > 0" class="table-wrapper">
+      <div v-if="taskList.length === 0" class="info-box">
+        등록된 준법 관리 TASK 항목이 존재하지 않습니다.
+      </div>
+      <div v-else class="card">
+        <div class="table-wrapper">
           <table class="data-table">
             <colgroup>
               <col />
@@ -48,9 +51,6 @@
               </tr>
             </tbody>
           </table>
-        </div>
-        <div v-else class="info-box">
-          등록된 준법 관리 TASK 항목이 존재하지 않습니다.
         </div>
       </div>
     </template>

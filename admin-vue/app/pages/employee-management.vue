@@ -14,43 +14,41 @@
     </div>
 
     <!-- Employee Table -->
-    <div class="card">
-      <template v-if="employees.length > 0">
-        <div class="table-wrapper">
-          <table class="data-table">
-            <colgroup>
-              <col style="width: 40px" />
-              <col />
-              <col style="width: 30%" />
-              <col style="width: 30%" />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>선택</th>
-                <th>직원번호</th>
-                <th>직원명</th>
-                <th>IP 주소</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="emp in employees" :key="emp.emp_no">
-                <td>
-                  <input
-                    type="checkbox"
-                    :value="emp.emp_no"
-                    v-model="selectedEmpNos"
-                  />
-                </td>
-                <td>{{ emp.emp_no }}</td>
-                <td>{{ emp.emp_nm }}</td>
-                <td>{{ emp.ip }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </template>
-      <div v-else class="info-box">
-        등록된 관리 대상 직원이 없습니다. 신규 직원을 추가해 주세요.
+    <div v-if="employees.length === 0" class="info-box">
+      등록된 관리 대상 직원이 없습니다. 신규 직원을 등록해 주세요.
+    </div>
+    <div v-else class="card">
+      <div class="table-wrapper">
+        <table class="data-table">
+          <colgroup>
+            <col style="width: 40px" />
+            <col />
+            <col style="width: 30%" />
+            <col style="width: 30%" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>선택</th>
+              <th>직원번호</th>
+              <th>직원명</th>
+              <th>IP 주소</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="emp in employees" :key="emp.emp_no">
+              <td>
+                <input
+                  type="checkbox"
+                  :value="emp.emp_no"
+                  v-model="selectedEmpNos"
+                />
+              </td>
+              <td>{{ emp.emp_no }}</td>
+              <td>{{ emp.emp_nm }}</td>
+              <td>{{ emp.ip }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
