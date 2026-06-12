@@ -1,7 +1,7 @@
 {
-  "name": "window-node",
+  "name": "kb-compliance-app",
   "version": "1.0.0",
-  "description": "",
+  "description": "KB Data Systems Compliance Program",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -9,15 +9,20 @@
   },
   "build": {
     "appId": "com.kbds.compliance",
+    "productName": "KBComplianceApp",
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "artifactName": "KBComplianceApp_Setup_v${version}.exe",
+      "requestedExecutionLevel": "asInvoker"
     },
     "nsis": {
-    "oneClick": false,
-    "allowToChangeInstallationDirectory": true,
-    "createDesktopShortcut": true,
-    "createStartMenuShortcut": true,
-    "runAfterFinish": true
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": false,
+      "include": "build/installer.nsh"
     }
   },
   "keywords": [],

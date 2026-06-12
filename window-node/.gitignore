@@ -1,7 +1,6 @@
 # Node.js 관련
 node_modules/
 dist/
-build/
 *.log
 .env
 .DS_Store
