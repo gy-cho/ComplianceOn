@@ -44,6 +44,9 @@ const menuItems = [
 ];
 
 function isActive(path: string) {
+  if (path === "/dashboard") {
+    return route.path === "/dashboard" || route.path === "/detail";
+  }
   return route.path === path;
 }
 
