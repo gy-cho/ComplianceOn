@@ -12,7 +12,7 @@
 .admin-layout {
   display: flex;
   min-height: 100vh;
-  background: #EEF0F5;
+  background: var(--bg-page);
 }
 
 .main-content {

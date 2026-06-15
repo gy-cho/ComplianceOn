@@ -77,13 +77,29 @@ function handleLogin() {
 }
 
 .login-card {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 40px 36px 36px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 44px 40px 40px;
   width: 100%;
-  max-width: 400px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  max-width: 420px;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.05);
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login-logo {
@@ -103,14 +119,58 @@ function handleLogin() {
   font-family: "KBFGDisplay";
   font-size: 20px;
   text-align: center;
-  color: #222;
-  margin-bottom: 24px;
+  color: #1e293b;
+  margin-bottom: 28px;
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
   gap: 0;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 12px 10px 38px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1e293b;
+  background: #f8fafc;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  background: #fff;
+  border-color: var(--kb-yellow);
+  box-shadow: 0 0 0 3px rgba(255, 188, 0, 0.2);
+}
+
+.input-icon-wrap {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: #94a3b8;
+  pointer-events: none;
 }
 
 .error-msg {
@@ -121,9 +181,12 @@ function handleLogin() {
 }
 
 .login-btn {
-  margin-top: 8px;
-  padding: 11px;
+  margin-top: 10px;
+  padding: 12px;
   font-size: 15px;
   font-weight: 600;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(255, 188, 0, 0.25);
+  transition: all 0.2s ease;
 }
 </style>
