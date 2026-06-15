@@ -111,7 +111,7 @@
           <input
             type="date"
             v-model="pickedDate"
-            :min="todayStr()"
+            :min="tomorrowStr()"
             style="flex: 1"
           />
           <button class="btn btn-secondary" @click="addDate">
@@ -132,7 +132,7 @@
                   <input
                     type="checkbox"
                     :id="`del-c-${i}`"
-                    :disabled="d <= todayStr()"
+                    :disabled="d < tomorrowStr()"
                     @change="removeDate(i)"
                   />
                 </td>
@@ -268,7 +268,7 @@
           <input
             type="date"
             v-model="pickedDate"
-            :min="todayStr()"
+            :min="tomorrowStr()"
             style="flex: 1"
           />
           <button class="btn btn-secondary" @click="addDate">
@@ -288,7 +288,7 @@
                 <td>
                   <input
                     type="checkbox"
-                    :disabled="d <= todayStr()"
+                    :disabled="d < tomorrowStr()"
                     @change="removeDate(i)"
                   />
                 </td>
@@ -414,7 +414,7 @@ const form = ref({
 });
 
 const tempDates = ref<string[]>([]);
-const pickedDate = ref(todayStr());
+const pickedDate = ref(tomorrowStr());
 const usedDates = ref<string[]>([]);
 const imageList = ref<any[]>([]);
 const questionPool = ref<any[]>([]);
@@ -440,6 +440,12 @@ function todayStr() {
   return new Date().toISOString().split("T")[0];
 }
 
+function tomorrowStr() {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  return d.toISOString().split('T')[0]
+}
+
 function typeLabel(type: string) {
   return type === "ETHICS"
     ? "윤리강령"
@@ -462,7 +468,7 @@ async function openCreate() {
     selected_qstn_cds: [],
   };
   tempDates.value = [];
-  pickedDate.value = todayStr();
+  pickedDate.value = tomorrowStr();
   usedDates.value = await fetchAllUsedDates();
   imageList.value = await fetchTaskImages();
   if (imageList.value.length > 0)
@@ -483,7 +489,7 @@ async function openDetail(task: any) {
   };
   const dates = await fetchTaskDates(task.task_id);
   tempDates.value = dates.map((d: any) => d.task_app_dt);
-  pickedDate.value = todayStr();
+  pickedDate.value = tomorrowStr();
   const allUsed = await fetchAllUsedDates();
   usedDates.value = allUsed.filter((d) => !tempDates.value.includes(d));
   imageList.value = await fetchTaskImages();
@@ -506,6 +512,10 @@ async function openDetail(task: any) {
 function addDate() {
   const d = pickedDate.value;
   if (!d) return;
+  if (d < tomorrowStr()) {
+    showToast('error', '오늘 이전 날짜는 추가할 수 없습니다.')
+    return
+  }
   if (usedDates.value.includes(d) && !tempDates.value.includes(d)) {
     showToast("error", "이미 다른 TASK에서 사용 중인 날짜입니다.");
     return;
@@ -519,7 +529,7 @@ function addDate() {
 
 function removeDate(index: number) {
   const d = tempDates.value[index];
-  if (d <= todayStr()) {
+  if (d < tomorrowStr()) {
     showToast("warning", "오늘 이전 날짜는 삭제할 수 없습니다.");
     return;
   }
