@@ -1,6 +1,6 @@
 !define TASK_NAME "ComplianceApp"
 ; ★ 실행 시각 변경: 아래 TASK_TIME 값만 수정하세요 (24시간 형식 HH:MM)
-!define TASK_TIME "16:45"
+!define TASK_TIME "09:00"
 
 !macro customInstall
   FileOpen $0 "$INSTDIR\task.xml" w
@@ -12,6 +12,9 @@
   FileWrite $0       '<Enabled>true</Enabled>'
   FileWrite $0       '<ScheduleByDay><DaysInterval>1</DaysInterval></ScheduleByDay>'
   FileWrite $0     '</CalendarTrigger>'
+  FileWrite $0     '<LogonTrigger>'
+  FileWrite $0       '<Enabled>true</Enabled>'
+  FileWrite $0     '</LogonTrigger>'
   FileWrite $0   '</Triggers>'
   FileWrite $0   '<Principals>'
   FileWrite $0     '<Principal id="Author">'

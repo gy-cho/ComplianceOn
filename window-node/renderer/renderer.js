@@ -343,10 +343,10 @@ function drawSelfCheckUI(taskData) {
     max-width:100%; max-height:100%;
     width:auto; height:auto; display:block;
   `;
-  bgImg.src = 'img_self_check_bg.png';
+  bgImg.src = 'img_self_check_bg.jpg';
 
   bgImg.onerror = async () => {
-    await showInappModal('오류', '자가점검 배경 이미지(img_self_check_bg.png)를 찾을 수 없습니다.');
+    await showInappModal('오류', '자가점검 배경 이미지(img_self_check_bg.jpg)를 찾을 수 없습니다.');
     terminateProgram();
   };
   bgImg.onload = () => buildSelfCheckOverlay(wrapper, bgImg, qstnList);
