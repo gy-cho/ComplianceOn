@@ -1,6 +1,6 @@
 {
   "name": "kb-compliance-app",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "KB Data Systems Compliance Program",
   "main": "main.js",
   "scripts": {
@@ -10,6 +10,18 @@
   "build": {
     "appId": "com.kbds.compliance",
     "productName": "KBComplianceApp",
+    "compression": "maximum",
+    "files": [
+      "**/*",
+      "!**/*.md",
+      "!**/*.map",
+      "!**/test/**",
+      "!**/tests/**",
+      "!**/docs/**",
+      "!**/.git/**",
+      "!**/*.ts",
+      "!node_modules/.cache"
+    ],
     "win": {
       "target": "nsis",
       "artifactName": "KBComplianceApp_Setup_v${version}.exe",
@@ -30,8 +42,8 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "electron": "^42.4.0",
-    "electron-builder": "^26.15.2"
+    "electron": "42.4.0",
+    "electron-builder": "26.15.2"
   },
   "dependencies": {
     "axios": "^1.17.0",
