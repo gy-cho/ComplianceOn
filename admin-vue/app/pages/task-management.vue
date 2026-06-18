@@ -167,6 +167,14 @@
           <div v-else class="warning-box">
             서버에서 조회된 이미지 데이터가 없습니다.
           </div>
+          <div v-if="form.img_flnm" class="form-group">
+            <label class="form-label">이미지 미리보기</label>
+            <img
+              :src="`${BASE_URL}/images/${form.img_flnm}`"
+              :alt="form.img_flnm"
+              style="max-width:100%; border:1px solid #e2e8f0; border-radius:6px;"
+            />
+          </div>
         </template>
 
         <!-- SELF_CHECK: question multiselect -->
