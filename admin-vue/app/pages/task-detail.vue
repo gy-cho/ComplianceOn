@@ -102,7 +102,7 @@
         <template v-if="selectedTask.task_type === 'ETHICS'">
           <div v-if="imageList.length > 0" class="form-group">
             <label class="form-label">서약 내용 이미지 수정 (필수)</label>
-            <select v-model="form.img_flnm" class="form-select">
+            <select v-model="form.img_flnm" class="form-select" disabled>
               <option
                 v-for="img in imageList"
                 :key="img.img_flnm"

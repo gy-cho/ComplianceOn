@@ -34,6 +34,9 @@
             <option value="N">미게시</option>
           </select>
         </div>
+        <button class="btn btn-reset" @click="resetSearch">
+          <Icon name="lucide:x" /> 초기화
+        </button>
       </div>
 
       <div v-if="filteredTasks.length === 0" class="info-box">
@@ -109,6 +112,12 @@ const filteredTasks = computed(() => {
   }
   return result;
 });
+
+function resetSearch() {
+  searchText.value = "";
+  typeFilter.value = "ALL";
+  statusFilter.value = "ALL";
+}
 
 function typeLabel(type: string) {
   return type === "ETHICS"

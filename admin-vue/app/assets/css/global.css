@@ -278,6 +278,27 @@ th {
   background: #ffebee;
 }
 
+.btn-excel {
+  background: #fff;
+  color: #1d6f42; /* Excel brand green */
+  border-color: #1d6f42;
+}
+
+.btn-excel:hover:not(:disabled) {
+  background: #1d6f42;
+  color: #fff;
+}
+
+.btn-reset {
+  background: #fff;
+  color: #5f5e5a; /* KB Dark Gray */
+  border-color: #888780; /* KB Gray */
+}
+
+.btn-reset:hover:not(:disabled) {
+  background: #f1efe8;
+}
+
 .btn-icon {
   background: #f0f0f0;
   color: #555;

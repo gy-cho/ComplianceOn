@@ -27,6 +27,9 @@
             placeholder="직원명, 직원번호, IP 주소 검색"
           />
         </div>
+        <button class="btn btn-reset" @click="resetSearch">
+          <Icon name="lucide:x" /> 초기화
+        </button>
       </div>
 
       <div v-if="filteredEmployees.length === 0" class="info-box">
@@ -168,6 +171,10 @@ const filteredEmployees = computed(() => {
 
 async function loadEmployees() {
   employees.value = await fetchAllEmployees();
+}
+
+function resetSearch() {
+  searchText.value = "";
 }
 
 function closeAddModal() {

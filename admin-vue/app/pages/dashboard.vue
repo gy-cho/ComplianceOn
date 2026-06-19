@@ -121,8 +121,11 @@
             <option>비정상</option>
           </select>
         </div>
+        <button class="btn btn-reset" @click="resetSearch">
+          <Icon name="lucide:x" /> 초기화
+        </button>
         <button
-          class="btn btn-secondary"
+          class="btn btn-excel"
           :disabled="filteredAnswers.length === 0"
           @click="downloadExcel"
         >
@@ -223,8 +226,8 @@ const selectedTaskId = ref<number | null>(null);
 const selectedAppSeq = ref<number | null>(null);
 const answers = ref<any[]>([]);
 const loading = ref(false);
-const statusFilter = ref("전체");
-const agreeFilter = ref("전체");
+const statusFilter = ref("답변여부 전체");
+const agreeFilter = ref("정상답변여부 전체");
 const searchText = ref("");
 
 const today = new Date().toISOString().split("T")[0];
@@ -236,7 +239,7 @@ const currentTask = computed(() =>
 const appSeqOptions = computed(() => {
   const dt = currentTask.value?.task_app_dt;
   if (!dt || dt.length === 0) return [];
-  const opts = [{ seq: 0, label: "전체" }];
+  const opts = [{ seq: 0, label: "답변여부 전체" }];
   const sorted = [...dt].sort((a, b) => a.app_seq - b.app_seq);
   for (const d of sorted) {
     opts.push({ seq: d.app_seq, label: `${d.task_app_dt} (${d.app_seq}회차)` });
@@ -322,6 +325,12 @@ async function refresh() {
   answers.value = [];
   await loadAnswers();
   showToast("success", "데이터가 새로고침 되었습니다!");
+}
+
+function resetSearch() {
+  searchText.value = "";
+  statusFilter.value = "답변여부 전체";
+  agreeFilter.value = "정상답변여부 전체";
 }
 
 function handleRowClick(row: any) {

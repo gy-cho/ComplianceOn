@@ -141,6 +141,10 @@
               type="checkbox"
               :value="q.qstn_cd"
               v-model="form.selected_qstn_cds"
+              :disabled="
+                !form.selected_qstn_cds.includes(q.qstn_cd) &&
+                form.selected_qstn_cds.length >= 3
+              "
             />
             <span class="question-option-text">
               [{{ q.qstn_cd }}] {{ q.qstn_nm }} - {{ q.qstn_cn }}
@@ -154,7 +158,7 @@
           </div>
         </div>
         <p class="text-muted mt-8">
-          선택됨: {{ form.selected_qstn_cds.length }}개
+          선택됨: {{ form.selected_qstn_cds.length }}개 (최대 3개)
         </p>
       </template>
     </div>
@@ -238,6 +242,13 @@ async function handleCreate() {
     form.value.selected_qstn_cds.length === 0
   ) {
     showToast("error", "최소 1개 이상의 질문 문항을 매핑해야 합니다.");
+    return;
+  }
+  if (
+    form.value.task_type === "SELF_CHECK" &&
+    form.value.selected_qstn_cds.length > 3
+  ) {
+    showToast("error", "질문 문항은 최대 3개까지만 선택할 수 있습니다.");
     return;
   }
   const payload = {
