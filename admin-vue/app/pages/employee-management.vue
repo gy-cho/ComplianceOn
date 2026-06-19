@@ -4,6 +4,19 @@
     <div class="page-header">
       <span class="page-title">준법 관리 대상 직원 목록</span>
       <div class="row-center">
+        <button class="btn btn-excel" @click="downloadEmployeeTemplate">
+          <Icon name="lucide:file-down" /> 양식 다운로드
+        </button>
+        <button class="btn btn-excel" @click="triggerFileSelect">
+          <Icon name="lucide:upload" /> 엑셀 업로드
+        </button>
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept=".xlsx,.xls"
+          style="display: none"
+          @change="handleFileSelected"
+        />
         <button class="btn btn-primary" @click="showAddModal = true">
           직원 등록
         </button>
@@ -45,7 +58,13 @@
           </colgroup>
           <thead>
             <tr>
-              <th>선택</th>
+              <th>
+                <input
+                  type="checkbox"
+                  :checked="isAllSelected"
+                  @change="toggleSelectAll"
+                />
+              </th>
               <th>직원번호</th>
               <th>직원명</th>
               <th>IP 주소</th>
@@ -136,6 +155,48 @@
         </div>
       </div>
     </div>
+
+    <!-- ── Excel Upload Result Modal ── -->
+    <div
+      v-if="showUploadErrorModal"
+      class="modal-overlay"
+      @click.self="showUploadErrorModal = false"
+    >
+      <div class="modal-box" style="width: 520px">
+        <div class="modal-title">엑셀 업로드 실패</div>
+        <p style="font-size: 14px; margin-bottom: 12px">
+          {{ uploadErrorMessage }}
+        </p>
+        <div
+          class="table-wrapper"
+          style="max-height: 280px; overflow-y: auto"
+        >
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 50px">No</th>
+                <th>오류 내용</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(err, i) in uploadErrors" :key="i">
+                <td>{{ i + 1 }}</td>
+                <td>{{ err }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            style="flex: none; width: 100%"
+            @click="showUploadErrorModal = false"
+          >
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -144,6 +205,8 @@ import {
   fetchAllEmployees,
   addNewEmployee,
   deleteEmployees,
+  downloadEmployeeTemplate,
+  uploadEmployees,
 } from "~/utils/api";
 
 definePageMeta({ middleware: "auth" });
@@ -155,6 +218,11 @@ const selectedEmpNos = ref<string[]>([]);
 const showAddModal = ref(false);
 const showDeleteModal = ref(false);
 const searchText = ref("");
+
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const showUploadErrorModal = ref(false);
+const uploadErrorMessage = ref("");
+const uploadErrors = ref<string[]>([]);
 
 const addForm = ref({ emp_no: "", emp_nm: "", ip: "" });
 
@@ -169,12 +237,68 @@ const filteredEmployees = computed(() => {
   );
 });
 
+const isAllSelected = computed(() => {
+  if (filteredEmployees.value.length === 0) return false;
+  return filteredEmployees.value.every((e) =>
+    selectedEmpNos.value.includes(e.emp_no),
+  );
+});
+
+function toggleSelectAll() {
+  if (isAllSelected.value) {
+    const filteredNos = new Set(
+      filteredEmployees.value.map((e) => e.emp_no),
+    );
+    selectedEmpNos.value = selectedEmpNos.value.filter(
+      (no) => !filteredNos.has(no),
+    );
+  } else {
+    const merged = new Set(selectedEmpNos.value);
+    filteredEmployees.value.forEach((e) => merged.add(e.emp_no));
+    selectedEmpNos.value = Array.from(merged);
+  }
+}
+
 async function loadEmployees() {
   employees.value = await fetchAllEmployees();
 }
 
 function resetSearch() {
   searchText.value = "";
+}
+
+function triggerFileSelect() {
+  fileInputRef.value?.click();
+}
+
+async function handleFileSelected(e: Event) {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = ""; // 같은 파일 재선택 시에도 change가 다시 발생하도록 초기화
+  if (!file) return;
+
+  const { status, data } = await uploadEmployees(file);
+  const body = data as any;
+
+  // 검증 실패: status 값과 무관하게 errors 배열이 내려오면 그 내용으로 모달 표시
+  if (Array.isArray(body?.errors) && body.errors.length > 0) {
+    uploadErrorMessage.value =
+      body?.message ?? "엑셀 검증 중 오류가 발견되어 전체 등록이 취소되었습니다.";
+    uploadErrors.value = body.errors;
+    showUploadErrorModal.value = true;
+    return;
+  }
+
+  if (status === 200 || status === 201) {
+    showToast(
+      "success",
+      body?.message ?? "엑셀 파일을 통해 직원이 일괄 등록되었습니다.",
+    );
+    await loadEmployees();
+    return;
+  }
+
+  showToast("error", body?.message ?? "엑셀 업로드 처리 중 오류가 발생했습니다.");
 }
 
 function closeAddModal() {

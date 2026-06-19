@@ -35,12 +35,16 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     
-    // 테스트 환경에서도 Lombok을 쓰기 위한 설정
+    // 📌 테스트 환경에서도 Lombok을 쓰기 위한 설정
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
 
     // 📌 Spring Boot용 Swagger UI (FastAPI의 /docs 같은 화면을 만들어 줍니다)
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5'
+
+    // 📌 6. 엑셀(.xlsx) 파일 업로드 및 읽기를 위한 Apache POI
+    implementation 'org.apache.poi:poi:5.2.5'
+    implementation 'org.apache.poi:poi-ooxml:5.2.5'
 }
 
 tasks.named('test') {
