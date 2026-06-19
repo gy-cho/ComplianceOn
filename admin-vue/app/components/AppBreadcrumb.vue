@@ -24,19 +24,25 @@ const route = useRoute();
 
 const routeMap: Record<string, string> = {
   "/dashboard": "현황 조회",
-  "/detail": "사원 상세 답변 내역",
+  "/answer-detail": "사원 상세 답변 내역",
   "/employee-management": "직원 관리",
   "/task-management": "준법 TASK",
+  "/task-create": "TASK 등록",
+  "/task-detail": "TASK 상세",
 };
 
 const crumbs = computed(() => {
   const path = route.path;
   const items: { path: string; label: string }[] = [];
 
-  // Detail page is a child of dashboard
-  if (path === "/detail") {
+  if (path === "/answer-detail") {
+    // Answer detail is a child of dashboard
     items.push({ path: "/dashboard", label: "현황 조회" });
     items.push({ path, label: `답변 상세` });
+  } else if (path === "/task-create" || path === "/task-detail") {
+    // Create/detail are children of task-management
+    items.push({ path: "/task-management", label: "준법 TASK" });
+    items.push({ path, label: routeMap[path] });
   } else {
     const label = routeMap[path] ?? path.replace("/", "");
     items.push({ path, label });

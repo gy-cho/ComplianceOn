@@ -45,9 +45,21 @@ const menuItems = [
 
 function isActive(path: string) {
   if (path === "/dashboard") {
-    return route.path === "/dashboard" || route.path === "/detail";
+    return route.path === "/dashboard" || route.path === "/answer-detail";
+  }
+  if (path === "/task-management") {
+    return (
+      route.path === "/task-management" ||
+      route.path === "/task-create" ||
+      route.path === "/task-detail"
+    );
   }
   return route.path === path;
+}
+
+function navigateTo(path: string) {
+  router.push(path);
+}
 }
 
 function logout() {

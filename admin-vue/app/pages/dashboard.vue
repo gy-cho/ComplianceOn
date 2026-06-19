@@ -322,7 +322,7 @@ function handleRowClick(row: any) {
     return;
   }
   router.push({
-    path: "/detail",
+    path: "/answer-detail",
     query: {
       task_id: String(row.task_id ?? selectedTaskId.value),
       app_seq: String(row.app_seq ?? selectedAppSeq.value),
