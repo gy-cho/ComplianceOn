@@ -60,7 +60,6 @@ function isActive(path: string) {
 function navigateTo(path: string) {
   router.push(path);
 }
-}
 
 function logout() {
   loggedIn.value = null;
