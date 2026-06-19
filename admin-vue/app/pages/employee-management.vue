@@ -18,7 +18,21 @@
       등록된 관리 대상 직원이 없습니다. 신규 직원을 등록해 주세요.
     </div>
     <div v-else class="card">
-      <div class="table-wrapper">
+      <div class="row-center" style="margin-bottom: 16px">
+        <div class="input-icon-wrap" style="flex: 1">
+          <Icon name="lucide:search" class="input-icon" />
+          <input
+            v-model="searchText"
+            class="form-input has-icon"
+            placeholder="직원명, 직원번호, IP 주소 검색"
+          />
+        </div>
+      </div>
+
+      <div v-if="filteredEmployees.length === 0" class="info-box">
+        검색 결과가 없습니다.
+      </div>
+      <div v-else class="table-wrapper">
         <table class="data-table">
           <colgroup>
             <col style="width: 40px" />
@@ -35,7 +49,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="emp in employees" :key="emp.emp_no">
+            <tr v-for="emp in filteredEmployees" :key="emp.emp_no">
               <td>
                 <input
                   type="checkbox"
@@ -137,8 +151,20 @@ const employees = ref<any[]>([]);
 const selectedEmpNos = ref<string[]>([]);
 const showAddModal = ref(false);
 const showDeleteModal = ref(false);
+const searchText = ref("");
 
 const addForm = ref({ emp_no: "", emp_nm: "", ip: "" });
+
+const filteredEmployees = computed(() => {
+  if (!searchText.value.trim()) return employees.value;
+  const s = searchText.value.toLowerCase();
+  return employees.value.filter(
+    (e) =>
+      String(e.emp_nm ?? "").toLowerCase().includes(s) ||
+      String(e.emp_no ?? "").toLowerCase().includes(s) ||
+      String(e.ip ?? "").toLowerCase().includes(s),
+  );
+});
 
 async function loadEmployees() {
   employees.value = await fetchAllEmployees();

@@ -11,7 +11,35 @@
       등록된 준법 관리 TASK 항목이 존재하지 않습니다.
     </div>
     <div v-else class="card">
-      <div class="table-wrapper">
+      <div class="row-center" style="margin-bottom: 16px">
+        <div class="input-icon-wrap" style="flex: 2">
+          <Icon name="lucide:search" class="input-icon" />
+          <input
+            v-model="searchText"
+            class="form-input has-icon"
+            placeholder="TASK 명 검색"
+          />
+        </div>
+        <div style="flex: 1">
+          <select v-model="typeFilter" class="form-select">
+            <option value="ALL">TASK유형 전체</option>
+            <option value="ETHICS">윤리강령</option>
+            <option value="SELF_CHECK">자가점검</option>
+          </select>
+        </div>
+        <div style="flex: 1">
+          <select v-model="statusFilter" class="form-select">
+            <option value="ALL">게시여부 전체</option>
+            <option value="Y">게시중</option>
+            <option value="N">미게시</option>
+          </select>
+        </div>
+      </div>
+
+      <div v-if="filteredTasks.length === 0" class="info-box">
+        검색 결과가 없습니다.
+      </div>
+      <div v-else class="table-wrapper">
         <table class="data-table">
           <colgroup>
             <col />
@@ -27,7 +55,7 @@
           </thead>
           <tbody>
             <tr
-              v-for="t in taskList"
+              v-for="t in filteredTasks"
               :key="t.task_id"
               class="row-hover"
               style="cursor: pointer"
@@ -61,6 +89,26 @@ definePageMeta({ middleware: "auth" });
 
 const router = useRouter();
 const taskList = ref<any[]>([]);
+const searchText = ref("");
+const statusFilter = ref("ALL");
+const typeFilter = ref("ALL");
+
+const filteredTasks = computed(() => {
+  let result = taskList.value;
+  if (typeFilter.value !== "ALL") {
+    result = result.filter((t) => t.task_type === typeFilter.value);
+  }
+  if (statusFilter.value !== "ALL") {
+    result = result.filter((t) => t.pbls_yn === statusFilter.value);
+  }
+  if (searchText.value.trim()) {
+    const s = searchText.value.toLowerCase();
+    result = result.filter((t) =>
+      String(t.task_nm ?? "").toLowerCase().includes(s),
+    );
+  }
+  return result;
+});
 
 function typeLabel(type: string) {
   return type === "ETHICS"

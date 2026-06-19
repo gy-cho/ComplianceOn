@@ -109,9 +109,16 @@
         </div>
         <div style="flex: 1">
           <select v-model="statusFilter" class="form-select">
-            <option>전체</option>
+            <option>답변여부 전체</option>
             <option>완료</option>
             <option>미완료</option>
+          </select>
+        </div>
+        <div style="flex: 1">
+          <select v-model="agreeFilter" class="form-select">
+            <option>정상답변여부 전체</option>
+            <option>정상</option>
+            <option>비정상</option>
           </select>
         </div>
         <button
@@ -217,6 +224,7 @@ const selectedAppSeq = ref<number | null>(null);
 const answers = ref<any[]>([]);
 const loading = ref(false);
 const statusFilter = ref("전체");
+const agreeFilter = ref("전체");
 const searchText = ref("");
 
 const today = new Date().toISOString().split("T")[0];
@@ -253,6 +261,10 @@ const filteredAnswers = computed(() => {
   if (statusFilter.value === "완료") data = data.filter(isAnswered);
   else if (statusFilter.value === "미완료")
     data = data.filter((r) => !isAnswered(r));
+  if (agreeFilter.value === "정상")
+    data = data.filter((r) => isAnswered(r) && isAgreed(r));
+  else if (agreeFilter.value === "비정상")
+    data = data.filter((r) => isAnswered(r) && !isAgreed(r));
   if (searchText.value) {
     const s = searchText.value.toLowerCase();
     data = data.filter(
