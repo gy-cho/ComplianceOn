@@ -114,13 +114,22 @@
             <option>미완료</option>
           </select>
         </div>
+        <button
+          class="btn btn-secondary"
+          :disabled="filteredAnswers.length === 0"
+          @click="downloadExcel"
+        >
+          <Icon name="lucide:download" />
+          엑셀 다운로드
+        </button>
       </div>
 
       <template v-if="filteredAnswers.length > 0">
         <div class="table-wrapper">
           <table class="data-table">
             <colgroup>
-              <col style="width: 150px" />
+              <col style="width: 110px" />
+              <col style="width: 100px" />
               <col style="width: auto" />
               <col style="width: 130px" />
               <col style="width: 100px" />
@@ -130,6 +139,7 @@
             <thead>
               <tr>
                 <th>직원명</th>
+                <th>직원번호</th>
                 <th>준법명</th>
                 <th>IP 주소</th>
                 <th>답변여부</th>
@@ -146,7 +156,8 @@
                 @click="handleRowClick(row)"
                 :title="isAnswered(row) ? '클릭하여 상세 보기' : ''"
               >
-                <td>{{ row.emp_nm }} ({{ row.emp_no }})</td>
+                <td>{{ row.emp_nm }}</td>
+                <td>{{ row.emp_no }}</td>
                 <td>
                   {{ row.task_nm }}({{ row.app_seq }}회차) -
                   {{ row.task_app_dt }}
@@ -193,6 +204,7 @@
 
 <script setup lang="ts">
 import { fetchEmpAnswers, fetchComplianceTasks } from "~/utils/api";
+import * as XLSX from "xlsx";
 
 definePageMeta({ middleware: "auth" });
 
@@ -318,6 +330,35 @@ function handleRowClick(row: any) {
       emp_nm: String(row.emp_nm),
     },
   });
+}
+
+function downloadExcel() {
+  const rows = filteredAnswers.value.map((row) => ({
+    직원명: row.emp_nm,
+    직원번호: row.emp_no,
+    준법명: `${row.task_nm}(${row.app_seq}회차) - ${row.task_app_dt}`,
+    "IP 주소": row.ip || "-",
+    답변여부: isAnswered(row) ? "완료" : "미완료",
+    정상답변여부: isAnswered(row) ? (isAgreed(row) ? "정상" : "비정상") : "-",
+    답변일시: row.ans_dt || "-",
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+  worksheet["!cols"] = [
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 35 },
+    { wch: 16 },
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 20 },
+  ];
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "현황조회");
+
+  const taskNm = currentTask.value?.task_nm ?? "현황조회";
+  const dateStr = new Date().toISOString().split("T")[0];
+  XLSX.writeFile(workbook, `${taskNm}_${dateStr}.xlsx`);
 }
 
 onMounted(loadTasks);

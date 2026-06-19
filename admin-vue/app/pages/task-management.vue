@@ -167,6 +167,18 @@
           <div v-else class="warning-box">
             서버에서 조회된 이미지 데이터가 없습니다.
           </div>
+          <div v-if="form.img_flnm" class="form-group">
+            <label class="form-label">이미지 미리보기</label>
+            <img
+              :src="`${BASE_URL}/images/${form.img_flnm}`"
+              :alt="form.img_flnm"
+              style="
+                max-width: 100%;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+              "
+            />
+          </div>
         </template>
 
         <!-- SELF_CHECK: question multiselect -->
@@ -372,12 +384,39 @@
       <!-- Action buttons -->
       <div class="btns-area">
         <button class="btn btn-primary" @click="handleUpdate">저장</button>
-        <button class="btn btn-danger" @click="handleDelete">삭제</button>
+        <button class="btn btn-danger" @click="showDeleteModal = true">삭제</button>
         <button class="btn btn-secondary" @click="mode = 'list'">
           목록으로
         </button>
       </div>
     </template>
+
+    <!-- ── Delete Confirm Modal ── -->
+    <div
+      v-if="showDeleteModal"
+      class="modal-overlay"
+      @click.self="showDeleteModal = false"
+    >
+      <div class="modal-box">
+        <div class="modal-title">TASK 삭제 확인</div>
+        <p style="font-size: 14px; margin-bottom: 8px">
+          <strong>{{ selectedTask?.task_nm }}</strong> TASK를 정말
+          삭제하시겠습니까?
+        </p>
+        <p class="text-muted">삭제된 TASK는 복구할 수 없습니다.</p>
+        <p class="text-muted">
+          이미 직원 답변이 등록된 TASK는 삭제가 제한됩니다.
+        </p>
+        <div class="modal-footer">
+          <button class="btn btn-primary" @click="confirmDelete">
+            최종 확인 및 삭제
+          </button>
+          <button class="btn btn-secondary" @click="showDeleteModal = false">
+            취소
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -403,6 +442,7 @@ type Mode = "list" | "create" | "detail";
 const mode = ref<Mode>("list");
 const taskList = ref<any[]>([]);
 const selectedTask = ref<any>(null);
+const showDeleteModal = ref(false);
 
 // Shared form state
 const form = ref({
@@ -480,6 +520,7 @@ async function openCreate() {
 
 async function openDetail(task: any) {
   selectedTask.value = task;
+  showDeleteModal.value = false;
   form.value = {
     task_nm: task.task_nm,
     task_type: task.task_type,
@@ -611,12 +652,18 @@ async function handleUpdate() {
   }
 }
 
-async function handleDelete() {
+async function confirmDelete() {
   const status = await deleteComplianceTask(selectedTask.value.task_id);
+  showDeleteModal.value = false;
   if (status === 200) {
     showToast("success", "해당 관리 TASK가 삭제되었습니다.");
     await loadList();
     mode.value = "list";
+  } else if (status === 409) {
+    showToast(
+      "error",
+      "이미 답변이 등록된 TASK는 삭제할 수 없습니다.",
+    );
   } else {
     showToast("error", "삭제 요청 처리 중 에러가 발생했습니다.");
   }

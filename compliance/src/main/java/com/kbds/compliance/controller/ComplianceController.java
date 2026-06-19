@@ -142,6 +142,7 @@ public class ComplianceController {
             if (taskId == null || taskId == 0) {
                 // 준법 항목 선택이 안 된 경우 기본 전체 마스터 사용자 가공 데이터 반환
                 query = "WITH TMP1 AS (" +
+                            // (A) 현재 활성 대상자 (TB_EMP 기준)
                             " SELECT TASK.TASK_ID AS task_id "+
                             "     , TASK.TASK_NM AS task_nm "+
                             "     , EMP.EMP_NM AS emp_nm "+
@@ -156,7 +157,28 @@ public class ComplianceController {
                             "   AND (TASK.DEL_YN = 'N' OR TASK.DEL_YN = NULL) "+
                             "   AND (CTAD.DEL_YN = 'N' OR CTAD.DEL_YN = NULL) "+
                             "   AND (EMP.DEL_YN = 'N' OR EMP.DEL_YN = NULL) "+
-                            " ORDER BY TASK.TASK_ID, CTAD.TASK_APP_DT, EMP.EMP_NO "+
+
+                            " UNION "+
+
+                            // (B) 삭제된 직원이라도 이미 답변(동의) 기록이 있으면 포함
+                            " SELECT TASK.TASK_ID AS task_id "+
+                            "     , TASK.TASK_NM AS task_nm "+
+                            "     , EMP.EMP_NM AS emp_nm "+
+                            "     , EMP.EMP_NO AS emp_no "+
+                            "     , COALESCE(EMP.IP, '0.0.0.0') AS ip "+
+                            "     , CTAD.APP_SEQ "+
+                            "     , CTAD.TASK_APP_DT "+
+                            " FROM TB_COMP_TASK TASK "+
+                            " , TB_COMP_TASK_APP_DT CTAD "+
+                            " , TB_EMP EMP "+
+                            " , TB_COMP_TASK_APP_DT_EMP_ANS CTADEA2 "+
+                            " WHERE TASK.TASK_ID = CTAD.TASK_ID "+
+                            "   AND CTADEA2.TASK_ID = TASK.TASK_ID "+
+                            "   AND CTADEA2.APP_SEQ = CTAD.APP_SEQ "+
+                            "   AND CTADEA2.EMP_NO = EMP.EMP_NO "+
+                            "   AND (TASK.DEL_YN = 'N' OR TASK.DEL_YN = NULL) "+
+                            "   AND (CTAD.DEL_YN = 'N' OR CTAD.DEL_YN = NULL) "+
+                            "   AND (CTADEA2.DEL_YN = 'N' OR CTADEA2.DEL_YN = NULL) "+
                         " ) "+
                         " SELECT TP1.task_id as task_id "+
                             " , TP1.task_nm as task_nm "+
@@ -173,7 +195,8 @@ public class ComplianceController {
                             " ON CTADEA.TASK_ID = TP1.TASK_ID "+
                             " AND CTADEA.APP_SEQ = TP1.APP_SEQ "+
                             " AND CTADEA.EMP_NO = TP1.EMP_NO "+
-                            " AND (CTADEA.DEL_YN = 'N' or CTADEA.DEL_YN is null ) ";
+                            " AND (CTADEA.DEL_YN = 'N' or CTADEA.DEL_YN is null ) "+
+                        " ORDER BY TP1.task_id, TP1.TASK_APP_DT, TP1.emp_no ";
 
             } else {
                 params.addValue("taskId", taskId);
@@ -181,6 +204,7 @@ public class ComplianceController {
 
                 if ( appSeq == null || appSeq == 0 ) {
                     query = "WITH TMP1 AS (" +
+                            // (A) 현재 활성 대상자
                             " SELECT TASK.TASK_ID AS task_id "+
                             "     , TASK.TASK_NM AS task_nm "+
                             "     , EMP.EMP_NM AS emp_nm "+
@@ -196,7 +220,29 @@ public class ComplianceController {
                             "   AND (TASK.DEL_YN = 'N' OR TASK.DEL_YN = NULL) "+
                             "   AND (CTAD.DEL_YN = 'N' OR CTAD.DEL_YN = NULL) "+
                             "   AND (EMP.DEL_YN = 'N' OR EMP.DEL_YN = NULL) "+
-                            " ORDER BY TASK.TASK_ID, CTAD.TASK_APP_DT, EMP.EMP_NO "+
+
+                            " UNION "+
+
+                            // (B) 삭제된 직원이라도 이미 답변(동의) 기록이 있으면 포함
+                            " SELECT TASK.TASK_ID AS task_id "+
+                            "     , TASK.TASK_NM AS task_nm "+
+                            "     , EMP.EMP_NM AS emp_nm "+
+                            "     , EMP.EMP_NO AS emp_no "+
+                            "     , COALESCE(EMP.IP, '0.0.0.0') AS ip "+
+                            "     , CTAD.APP_SEQ "+
+                            "     , CTAD.TASK_APP_DT "+
+                            " FROM TB_COMP_TASK TASK "+
+                            " , TB_COMP_TASK_APP_DT CTAD "+
+                            " , TB_EMP EMP "+
+                            " , TB_COMP_TASK_APP_DT_EMP_ANS CTADEA2 "+
+                            " WHERE TASK.TASK_ID = :taskId "+
+                            "   AND TASK.TASK_ID = CTAD.TASK_ID "+
+                            "   AND CTADEA2.TASK_ID = TASK.TASK_ID "+
+                            "   AND CTADEA2.APP_SEQ = CTAD.APP_SEQ "+
+                            "   AND CTADEA2.EMP_NO = EMP.EMP_NO "+
+                            "   AND (TASK.DEL_YN = 'N' OR TASK.DEL_YN = NULL) "+
+                            "   AND (CTAD.DEL_YN = 'N' OR CTAD.DEL_YN = NULL) "+
+                            "   AND (CTADEA2.DEL_YN = 'N' OR CTADEA2.DEL_YN = NULL) "+
                         " ) "+
                         " SELECT TP1.task_id as task_id "+
                             " , TP1.task_nm as task_nm "+
@@ -213,9 +259,11 @@ public class ComplianceController {
                             " ON CTADEA.TASK_ID = TP1.TASK_ID "+
                             " AND CTADEA.APP_SEQ = TP1.APP_SEQ "+
                             " AND CTADEA.EMP_NO = TP1.EMP_NO "+
-                            " AND (CTADEA.DEL_YN = 'N' or CTADEA.DEL_YN is null ) ";
+                            " AND (CTADEA.DEL_YN = 'N' or CTADEA.DEL_YN is null ) "+
+                        " ORDER BY TP1.task_id, TP1.TASK_APP_DT, TP1.emp_no ";
                 } else {
                     query = "WITH TMP1 AS (" +
+                            // (A) 현재 활성 대상자
                             " SELECT TASK.TASK_ID AS task_id "+
                             "     , TASK.TASK_NM AS task_nm "+
                             "     , EMP.EMP_NM AS emp_nm "+
@@ -232,7 +280,30 @@ public class ComplianceController {
                             "   AND (TASK.DEL_YN = 'N' OR TASK.DEL_YN = NULL) "+
                             "   AND (CTAD.DEL_YN = 'N' OR CTAD.DEL_YN = NULL) "+
                             "   AND (EMP.DEL_YN = 'N' OR EMP.DEL_YN = NULL) "+
-                            " ORDER BY TASK.TASK_ID, CTAD.TASK_APP_DT, EMP.EMP_NO "+
+
+                            " UNION "+
+
+                            // (B) 삭제된 직원이라도 이미 답변(동의) 기록이 있으면 포함
+                            " SELECT TASK.TASK_ID AS task_id "+
+                            "     , TASK.TASK_NM AS task_nm "+
+                            "     , EMP.EMP_NM AS emp_nm "+
+                            "     , EMP.EMP_NO AS emp_no "+
+                            "     , COALESCE(EMP.IP, '0.0.0.0') AS ip "+
+                            "     , CTAD.APP_SEQ "+
+                            "     , CTAD.TASK_APP_DT "+
+                            " FROM TB_COMP_TASK TASK "+
+                            " , TB_COMP_TASK_APP_DT CTAD "+
+                            " , TB_EMP EMP "+
+                            " , TB_COMP_TASK_APP_DT_EMP_ANS CTADEA2 "+
+                            " WHERE TASK.TASK_ID = :taskId "+
+                            "   AND TASK.TASK_ID = CTAD.TASK_ID "+
+                            "   AND CTAD.APP_SEQ = :appSeq "+
+                            "   AND CTADEA2.TASK_ID = TASK.TASK_ID "+
+                            "   AND CTADEA2.APP_SEQ = CTAD.APP_SEQ "+
+                            "   AND CTADEA2.EMP_NO = EMP.EMP_NO "+
+                            "   AND (TASK.DEL_YN = 'N' OR TASK.DEL_YN = NULL) "+
+                            "   AND (CTAD.DEL_YN = 'N' OR CTAD.DEL_YN = NULL) "+
+                            "   AND (CTADEA2.DEL_YN = 'N' OR CTADEA2.DEL_YN = NULL) "+
                         " ) "+
                         " SELECT TP1.task_id as task_id "+
                             " , TP1.task_nm as task_nm "+
@@ -249,7 +320,8 @@ public class ComplianceController {
                             " ON CTADEA.TASK_ID = TP1.TASK_ID "+
                             " AND CTADEA.APP_SEQ = TP1.APP_SEQ "+
                             " AND CTADEA.EMP_NO = TP1.EMP_NO "+
-                            " AND (CTADEA.DEL_YN = 'N' or CTADEA.DEL_YN is null ) ";
+                            " AND (CTADEA.DEL_YN = 'N' or CTADEA.DEL_YN is null ) "+
+                        " ORDER BY TP1.task_id, TP1.TASK_APP_DT, TP1.emp_no ";
 
                 }
                 
@@ -723,6 +795,22 @@ public class ComplianceController {
     @PostMapping("/delete-compliance-task")
     public ResponseEntity<?> deleteComplianceTask(@RequestParam("taskId") int taskId) {
         try {
+            // 1. 단 한 번이라도 답변(동의 진행)이 발생한 적이 있는지 확인
+            //    - TB_COMP_TASK_APP_DT_EMP_ANS 에 해당 TASK_ID로 기록이 하나라도 있으면
+            //      "동의가 진행된 TASK"로 간주하여 삭제를 막는다.
+            //    - 날짜(TB_COMP_TASK_APP_DT)만 등록되어 있고 답변 기록이 전혀 없는 경우는
+            //      삭제를 허용한다.
+            String checkAnsQuery =
+                    "SELECT COUNT(*) FROM TB_COMP_TASK_APP_DT_EMP_ANS " +
+                    " WHERE TASK_ID = :taskId ";
+            int ansCount = jdbcTemplate.queryForObject(
+                    checkAnsQuery, new MapSqlParameterSource("taskId", taskId), Integer.class);
+
+            if (ansCount > 0) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(Map.of("message", "이미 동의가 진행된 TASK는 삭제할 수 없습니다."));
+            }
+
             String query = "UPDATE TB_COMP_TASK SET DEL_YN = 'Y', CHG_DTM = now() WHERE TASK_ID = :taskId";
             MapSqlParameterSource params = new MapSqlParameterSource("taskId", taskId);
             jdbcTemplate.update(query, params);
