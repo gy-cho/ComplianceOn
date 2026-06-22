@@ -40,6 +40,7 @@ const loggedIn = useCookie("kb_logged_in");
 const menuItems = [
   { path: "/dashboard", icon: "lucide:layout-grid", label: "현황 조회" },
   { path: "/employee-management", icon: "lucide:users", label: "직원 관리" },
+  { path: "/pool-management", icon: "lucide:database", label: "POOL 관리" },
   { path: "/task-management", icon: "lucide:shield-check", label: "준법 TASK" },
 ];
 

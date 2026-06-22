@@ -163,19 +163,30 @@ export async function uploadImage(file: File): Promise<{ status: number; data: a
 }
 
 export async function deleteImage(imgFlnm: string) {
-  const { status } = await post<any>('/delete-image', { img_flnm: imgFlnm })
-  return status
+  return post<any>('/delete-image', { img_flnm: imgFlnm })
 }
 
 
 // ── Question Pool ──────────────────────────────────────────────────────────
 
-export async function addQuestion(qstnNm: string) {
-  const { status } = await post<any>('/add-question', { qstn_nm: qstnNm })
-  return status
+export async function addQuestion(qstnNm: string, qstnCn: string, qstnType?: string) {
+  return post<any>('/add-question', { qstn_nm: qstnNm, qstn_cn: qstnCn, qstn_type: qstnType })
+}
+
+export async function updateQuestion(
+  qstnCd: string,
+  qstnNm: string,
+  qstnCn: string,
+  qstnType?: string,
+) {
+  return post<any>('/update-question', {
+    qstn_cd: qstnCd,
+    qstn_nm: qstnNm,
+    qstn_cn: qstnCn,
+    qstn_type: qstnType,
+  })
 }
 
 export async function deleteQuestion(qstnCd: string) {
-  const { status } = await post<any>('/delete-question', { qstn_cd: qstnCd })
-  return status
+  return post<any>('/delete-question', { qstn_cd: qstnCd })
 }

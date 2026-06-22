@@ -26,6 +26,7 @@ const routeMap: Record<string, string> = {
   "/dashboard": "현황 조회",
   "/answer-detail": "사원 상세 답변 내역",
   "/employee-management": "직원 관리",
+  "/pool-management": "POOL 관리",
   "/task-management": "준법 TASK",
   "/task-create": "TASK 등록",
   "/task-detail": "TASK 상세",
