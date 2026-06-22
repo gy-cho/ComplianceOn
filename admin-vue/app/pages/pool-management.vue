@@ -42,10 +42,10 @@
           {{ questionSearchText ? "검색 결과가 없습니다." : "등록된 질문이 존재하지 않습니다." }}
         </div>
         <div v-else class="table-wrapper">
-          <table class="data-table">
+          <table class="data-table qstn-table">
             <colgroup>
               <col style="width: 90px" />
-              <col style="width: 140px" />
+              <col style="width: 160px" />
               <col />
               <col style="width: 130px" />
             </colgroup>
@@ -58,16 +58,16 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="q in filteredQuestionPool" :key="q.qstn_cd">
+              <tr v-for="q in filteredQuestionPool" :key="q.qstn_cd" class="qstn-row">
                 <td>{{ q.qstn_cd }}</td>
                 <td>{{ q.qstn_nm }}</td>
-                <td>{{ q.qstn_cn }}</td>
+                <td class="qstn-cn-cell">{{ q.qstn_cn }}</td>
                 <td>
                   <div class="row-center" style="gap: 6px">
                     <button class="btn btn-secondary btn-sm" @click="openEditQuestionModal(q)">
                       수정
                     </button>
-                    <button class="btn btn-danger btn-sm" @click="handleDeleteQuestion(q.qstn_cd)">
+                    <button class="btn btn-danger btn-sm" @click="openDeleteQuestionModal(q)">
                       삭제
                     </button>
                   </div>
@@ -130,7 +130,7 @@
             <p class="image-pool-name" :title="img.img_flnm">{{ img.img_flnm }}</p>
             <button
               class="btn btn-danger btn-sm btn-full"
-              @click.stop="handleDeleteImage(img.img_flnm)"
+              @click.stop="openDeleteImageModal(img.img_flnm)"
             >
               삭제
             </button>
@@ -156,10 +156,59 @@
           <img :src="`${BASE_URL}/images/${previewImage.img_flnm}`" :alt="previewImage.img_flnm" />
         </div>
         <div class="modal-footer">
-          <button class="btn btn-danger" @click="handleDeleteFromPreview">
+          <button class="btn btn-danger" @click="openDeleteImageModal(previewImage.img_flnm)">
             삭제
           </button>
           <button class="btn btn-secondary" @click="previewImage = null">닫기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Delete Question Confirm Modal ── -->
+    <div
+      v-if="showDeleteQuestionModal"
+      class="modal-overlay"
+      @click.self="showDeleteQuestionModal = false"
+    >
+      <div class="modal-box">
+        <div class="modal-title">질문 삭제 확인</div>
+        <p style="font-size: 14px; margin-bottom: 8px">
+          <strong>[{{ deletingQuestion?.qstn_cd }}] {{ deletingQuestion?.qstn_nm }}</strong>
+          질문을 정말 삭제하시겠습니까?
+        </p>
+        <p class="text-muted">삭제된 질문은 복구할 수 없습니다.</p>
+        <p class="text-muted">이미 TASK에 사용 중인 질문은 삭제가 제한됩니다.</p>
+        <div class="modal-footer">
+          <button class="btn btn-primary" @click="confirmDeleteQuestion">
+            최종 확인 및 삭제
+          </button>
+          <button class="btn btn-secondary" @click="showDeleteQuestionModal = false">
+            취소
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Delete Image Confirm Modal ── -->
+    <div
+      v-if="showDeleteImageModal"
+      class="modal-overlay"
+      @click.self="showDeleteImageModal = false"
+    >
+      <div class="modal-box">
+        <div class="modal-title">이미지 삭제 확인</div>
+        <p style="font-size: 14px; margin-bottom: 8px">
+          <strong>{{ deletingImageFlnm }}</strong> 이미지를 정말 삭제하시겠습니까?
+        </p>
+        <p class="text-muted">삭제된 이미지는 복구할 수 없습니다.</p>
+        <p class="text-muted">이미 TASK에 사용 중인 이미지는 삭제가 제한됩니다.</p>
+        <div class="modal-footer">
+          <button class="btn btn-primary" @click="confirmDeleteImage">
+            최종 확인 및 삭제
+          </button>
+          <button class="btn btn-secondary" @click="showDeleteImageModal = false">
+            취소
+          </button>
         </div>
       </div>
     </div>
@@ -170,7 +219,7 @@
       class="modal-overlay"
       @click.self="closeQuestionModal"
     >
-      <div class="modal-box">
+      <div class="modal-box question-modal-box">
         <div class="modal-title">
           {{ editingQuestion ? "질문 수정" : "질문 등록" }}
         </div>
@@ -181,11 +230,12 @@
         </div>
         <div class="form-group">
           <label class="form-label">질문 내용 (필수)</label>
-          <input v-model="questionForm.qstn_cn" class="form-input" placeholder="질문 내용을 입력하세요" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">질문 유형</label>
-          <input v-model="questionForm.qstn_type" class="form-input" placeholder="질문 유형을 입력하세요 (선택)" />
+          <textarea
+            v-model="questionForm.qstn_cn"
+            class="form-input question-textarea"
+            placeholder="질문 내용을 입력하세요"
+            rows="6"
+          />
         </div>
 
         <div class="modal-footer">
@@ -222,7 +272,7 @@ const questionPool = ref<any[]>([]);
 const questionSearchText = ref("");
 const showQuestionModal = ref(false);
 const editingQuestion = ref<any | null>(null);
-const questionForm = ref({ qstn_nm: "", qstn_cn: "", qstn_type: "" });
+const questionForm = ref({ qstn_nm: "", qstn_cn: "" });
 
 const filteredQuestionPool = computed(() => {
   const s = questionSearchText.value.trim().toLowerCase();
@@ -240,7 +290,7 @@ async function loadQuestionPool() {
 
 function openAddQuestionModal() {
   editingQuestion.value = null;
-  questionForm.value = { qstn_nm: "", qstn_cn: "", qstn_type: "" };
+  questionForm.value = { qstn_nm: "", qstn_cn: "" };
   showQuestionModal.value = true;
 }
 
@@ -249,7 +299,6 @@ function openEditQuestionModal(q: any) {
   questionForm.value = {
     qstn_nm: q.qstn_nm ?? "",
     qstn_cn: q.qstn_cn ?? "",
-    qstn_type: q.qstn_type ?? "",
   };
   showQuestionModal.value = true;
 }
@@ -260,7 +309,7 @@ function closeQuestionModal() {
 }
 
 async function handleSubmitQuestion() {
-  const { qstn_nm, qstn_cn, qstn_type } = questionForm.value;
+  const { qstn_nm, qstn_cn } = questionForm.value;
   if (!qstn_nm.trim()) {
     showToast("error", "질문명을 입력하세요.");
     return;
@@ -275,7 +324,6 @@ async function handleSubmitQuestion() {
       editingQuestion.value.qstn_cd,
       qstn_nm.trim(),
       qstn_cn.trim(),
-      qstn_type.trim() || undefined,
     );
     if (status === 200) {
       showToast("success", data?.message ?? "질문이 수정되었습니다.");
@@ -288,11 +336,7 @@ async function handleSubmitQuestion() {
       );
     }
   } else {
-    const { status, data } = await addQuestion(
-      qstn_nm.trim(),
-      qstn_cn.trim(),
-      qstn_type.trim() || undefined,
-    );
+    const { status, data } = await addQuestion(qstn_nm.trim(), qstn_cn.trim());
     if (status === 201) {
       showToast("success", data?.message ?? "질문이 등록되었습니다.");
       closeQuestionModal();
@@ -303,8 +347,18 @@ async function handleSubmitQuestion() {
   }
 }
 
-async function handleDeleteQuestion(qstnCd: string) {
-  const { status, data } = await deleteQuestion(qstnCd);
+const showDeleteQuestionModal = ref(false);
+const deletingQuestion = ref<any | null>(null);
+
+function openDeleteQuestionModal(q: any) {
+  deletingQuestion.value = q;
+  showDeleteQuestionModal.value = true;
+}
+
+async function confirmDeleteQuestion() {
+  if (!deletingQuestion.value) return;
+  const { status, data } = await deleteQuestion(deletingQuestion.value.qstn_cd);
+  showDeleteQuestionModal.value = false;
   if (status === 200) {
     showToast("success", data?.message ?? "삭제되었습니다.");
     await loadQuestionPool();
@@ -332,14 +386,32 @@ const filteredImageList = computed(() => {
   );
 });
 
+const showDeleteImageModal = ref(false);
+const deletingImageFlnm = ref<string>("");
+
 function openPreview(img: any) {
   previewImage.value = img;
 }
 
-async function handleDeleteFromPreview() {
-  if (!previewImage.value) return;
-  await handleDeleteImage(previewImage.value.img_flnm);
-  previewImage.value = null;
+function openDeleteImageModal(imgFlnm: string) {
+  deletingImageFlnm.value = imgFlnm;
+  showDeleteImageModal.value = true;
+}
+
+async function confirmDeleteImage() {
+  if (!deletingImageFlnm.value) return;
+  const { status, data } = await deleteImage(deletingImageFlnm.value);
+  showDeleteImageModal.value = false;
+  if (status === 200) {
+    showToast("success", data?.message ?? "삭제되었습니다.");
+    previewImage.value = null;
+    await loadImageList();
+  } else {
+    showToast(
+      "error",
+      data?.message ?? "삭제에 실패했습니다. 이미 TASK에 사용 중인 이미지일 수 있습니다.",
+    );
+  }
 }
 
 async function loadImageList() {
@@ -363,19 +435,6 @@ async function handleUploadImage() {
     await loadImageList();
   } else {
     showToast("error", data?.message ?? "이미지 업로드에 실패했습니다.");
-  }
-}
-
-async function handleDeleteImage(imgFlnm: string) {
-  const { status, data } = await deleteImage(imgFlnm);
-  if (status === 200) {
-    showToast("success", data?.message ?? "삭제되었습니다.");
-    await loadImageList();
-  } else {
-    showToast(
-      "error",
-      data?.message ?? "삭제에 실패했습니다. 이미 TASK에 사용 중인 이미지일 수 있습니다.",
-    );
   }
 }
 
@@ -534,5 +593,30 @@ onMounted(async () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ── Question Add/Edit Modal ── */
+.question-modal-box {
+  width: 520px;
+}
+
+.question-textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+.qstn-table {
+  table-layout: fixed;
+}
+
+.qstn-row td {
+  vertical-align: top;
+}
+
+.qstn-cn-cell {
+  line-height: 1.5;
+  word-break: break-word;
 }
 </style>

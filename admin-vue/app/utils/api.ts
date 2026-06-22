@@ -169,21 +169,15 @@ export async function deleteImage(imgFlnm: string) {
 
 // ── Question Pool ──────────────────────────────────────────────────────────
 
-export async function addQuestion(qstnNm: string, qstnCn: string, qstnType?: string) {
-  return post<any>('/add-question', { qstn_nm: qstnNm, qstn_cn: qstnCn, qstn_type: qstnType })
+export async function addQuestion(qstnNm: string, qstnCn: string) {
+  return post<any>('/add-question', { qstn_nm: qstnNm, qstn_cn: qstnCn })
 }
 
-export async function updateQuestion(
-  qstnCd: string,
-  qstnNm: string,
-  qstnCn: string,
-  qstnType?: string,
-) {
+export async function updateQuestion(qstnCd: string, qstnNm: string, qstnCn: string) {
   return post<any>('/update-question', {
     qstn_cd: qstnCd,
     qstn_nm: qstnNm,
     qstn_cn: qstnCn,
-    qstn_type: qstnType,
   })
 }
 
