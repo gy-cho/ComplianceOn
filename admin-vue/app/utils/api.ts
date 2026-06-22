@@ -1,5 +1,5 @@
-export const BASE_URL = "http://10.201.2.93:8080";
-// export const BASE_URL = "http://192.168.62.94:8080";
+// export const BASE_URL = "http://10.201.2.93:8080";
+export const BASE_URL = "http://127.0.0.1:8080";
 
 async function get<T>(path: string): Promise<T | null> {
   try {
@@ -68,6 +68,25 @@ export async function deleteEmployees(empNos: string[]) {
   return post<any>("/delete-employees", { emp_nos: empNos });
 }
 
+export function downloadEmployeeTemplate() {
+  window.open(`${BASE_URL}/download-employee-template`, "_blank");
+}
+
+export async function uploadEmployees(file: File) {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${BASE_URL}/upload-employees`, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json().catch(() => null);
+    return { status: res.status, data };
+  } catch {
+    return { status: 500, data: null };
+  }
+}
+
 // ── Compliance Tasks ──────────────────────────────────────────────────────────
 
 export async function fetchComplianceTasks() {
@@ -126,4 +145,37 @@ export async function fetchTaskDates(taskId: number) {
 export async function fetchTaskImages() {
   const data = await get<any[]>("/get-img-pool");
   return Array.isArray(data) ? data : [];
+}
+
+export async function uploadImage(file: File): Promise<{ status: number; data: any }> {
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch(`${BASE_URL}/upload-image`, {
+      method: 'POST',
+      body: formData, // Content-Type 헤더는 지정하지 않음 (브라우저가 자동 설정)
+    })
+    const data = await res.json().catch(() => null)
+    return { status: res.status, data }
+  } catch {
+    return { status: 500, data: null }
+  }
+}
+
+export async function deleteImage(imgFlnm: string) {
+  const { status } = await post<any>('/delete-image', { img_flnm: imgFlnm })
+  return status
+}
+
+
+// ── Question Pool ──────────────────────────────────────────────────────────
+
+export async function addQuestion(qstnNm: string) {
+  const { status } = await post<any>('/add-question', { qstn_nm: qstnNm })
+  return status
+}
+
+export async function deleteQuestion(qstnCd: string) {
+  const { status } = await post<any>('/delete-question', { qstn_cd: qstnCd })
+  return status
 }
