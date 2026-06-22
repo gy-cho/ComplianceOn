@@ -69,6 +69,25 @@ export async function deleteEmployees(empNos: string[]) {
   return post<any>("/delete-employees", { emp_nos: empNos });
 }
 
+export function downloadEmployeeTemplate() {
+  window.open(`${BASE_URL}/download-employee-template`, "_blank");
+}
+
+export async function uploadEmployees(file: File) {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${BASE_URL}/upload-employees`, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json().catch(() => null);
+    return { status: res.status, data };
+  } catch {
+    return { status: 500, data: null };
+  }
+}
+
 // ── Compliance Tasks ──────────────────────────────────────────────────────────
 
 export async function fetchComplianceTasks() {
