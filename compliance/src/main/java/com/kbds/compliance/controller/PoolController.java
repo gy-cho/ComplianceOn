@@ -41,7 +41,7 @@ public class PoolController {
     //    이 경로로 매핑해서 서빙하고 있으므로, 반드시 이 경로와 동일하게 맞춰야 한다.
     //  - [개발환경] C:\Users\KBDS\Documents\images
     //  - [운영환경] /home/kbds/Documents/images/  (운영 반영 시 이 값으로 교체 필요)
-    private static final String IMAGE_UPLOAD_DIR = "C:\\Users\\KBDS\\Documents\\images\\";
+    private static final String IMAGE_UPLOAD_DIR = "/home/kbds/Documents/images/";
 
     // ===================================================================
     // 질문 Pool (TB_COMP_QSTN_POOL)

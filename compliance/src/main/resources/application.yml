@@ -1,7 +1,7 @@
 spring:
   datasource:
-    url: jdbc:postgresql://127.0.0.1:5432/postgres
-    # url: jdbc:postgresql://10.201.2.93:5432/postgres
+    # url: jdbc:postgresql://127.0.0.1:5432/postgres
+    url: jdbc:postgresql://10.201.106.35:5432/postgres
     username: postgres
     password: 'kbds1!'
     driver-class-name: org.postgresql.Driver
@@ -23,5 +23,4 @@ cors:
   allowed-origins:
     - http://localhost:3000
     - http://localhost:8501
-    - http://10.201.2.93
-    - http://192.168.62.94
+    - http://10.201.106.35

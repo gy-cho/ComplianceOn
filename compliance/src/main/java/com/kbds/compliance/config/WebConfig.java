@@ -16,8 +16,8 @@ public class WebConfig implements WebMvcConfigurer {
         // [개발환경] C:\Users\KBDS\Documents\images
         // [운영환경] file:/home/kbds/Documents/images/  (운영 반영 시 이 값으로 교체 필요)
         registry.addResourceHandler("/images/**")
-                .addResourceLocations("file:///C:/Users/KBDS/Documents/images/");
-                // .addResourceLocations("file:/home/kbds/Documents/images/");
+                // .addResourceLocations("file:///C:/Users/KBDS/Documents/images/");
+                .addResourceLocations("file:/home/kbds/Documents/images/");
     }
 
     @Override
