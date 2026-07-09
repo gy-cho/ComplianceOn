@@ -820,9 +820,17 @@ async function onAgree() {
 // =========================================================================
 window.electronAPI.onInit(async ({ empNo }) => {
   empNoStr = empNo;
+  window.electronAPI.log(`[renderer] onInit 수신 - empNo: ${empNo}`);
 
   const taskData = await fetchTaskAndInit();
-  if (!taskData) { terminateProgram(); return; }
+
+  if (!taskData) {
+    window.electronAPI.log(`[renderer] taskData 없음 → terminateProgram`);
+    terminateProgram();
+    return;
+  }
+
+  window.electronAPI.log(`[renderer] taskData 수신 성공 - task_id: ${taskIdStr}, task_type: ${taskTypeStr}`);
 
   currentTaskData = taskData;
   showLoading(false);
@@ -830,9 +838,14 @@ window.electronAPI.onInit(async ({ empNo }) => {
   window.electronAPI.showWindow();
 
   if (taskTypeStr === 'ETHICS') {
+    window.electronAPI.log('[renderer] drawEthicsUI 호출');
     await drawEthicsUI(taskData);
   } else if (taskTypeStr === 'SELF_CHECK') {
+    window.electronAPI.log('[renderer] drawSelfCheckUI 호출');
     drawSelfCheckUI(taskData);
+  } else {
+    window.electronAPI.log(`[renderer] 알 수 없는 task_type: ${taskTypeStr} → terminateProgram`);
+    terminateProgram();
   }
 });
 
@@ -841,16 +854,30 @@ window.electronAPI.onInit(async ({ empNo }) => {
 // =========================================================================
 async function fetchTaskAndInit() {
   const url = `${BASE_URL}/get-task-qstn?emp_no=${empNoStr}`;
+  window.electronAPI.log(`[renderer] fetchTaskAndInit 시작 - URL: ${url}`);
   try {
     const response = await fetch(url, { signal: AbortSignal.timeout(3000) });
-    if (!response.ok) return null;
+    window.electronAPI.log(`[renderer] 서버 응답 status: ${response.status}`);
+
+    if (!response.ok) {
+      window.electronAPI.log(`[renderer] response.ok 아님 → null 반환`);
+      return null;
+    }
+
     const results = await response.json();
-    if (!results || results.length === 0) return null;
+    window.electronAPI.log(`[renderer] 응답 데이터: ${JSON.stringify(results)}`);
+
+    if (!results || results.length === 0) {
+      window.electronAPI.log(`[renderer] results 비어있음 → null 반환`);
+      return null;
+    }
 
     const taskData = results[0];
     taskIdStr   = String(taskData.task_id  ?? '');
     appSeqStr   = String(taskData.app_seq  ?? '');
     taskTypeStr = taskData.task_type || 'ETHICS';
+
+    window.electronAPI.log(`[renderer] taskData 파싱 완료 - task_id:${taskIdStr} task_type:${taskTypeStr} app_seq:${appSeqStr}`);
 
     if (taskTypeStr === 'SELF_CHECK' && Array.isArray(taskData.qstn_list)) {
       for (const qstn of taskData.qstn_list) {
@@ -859,6 +886,7 @@ async function fetchTaskAndInit() {
     }
     return taskData;
   } catch (e) {
+    window.electronAPI.log(`[renderer] fetch 예외 발생 - ${e.name}: ${e.message}`);
     console.error('태스크 조회 실패:', e);
     return null;
   }
