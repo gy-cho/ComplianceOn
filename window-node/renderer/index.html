@@ -16,6 +16,42 @@
   <!-- 메인 컨테이너: 조회 성공 후 표시 -->
   <div id="app-container" style="display:none;"></div>
 
+  <script>
+    // -----------------------------------------------------------------------
+    // JS 전역 오류 감지 — renderer.js 로드 전에 먼저 등록
+    // -----------------------------------------------------------------------
+    window.onerror = function(msg, src, line, col, err) {
+      try {
+        const text = '[index.html onerror] ' + msg + ' | ' + src + ':' + line;
+        if (window.electronAPI && window.electronAPI.log) {
+          window.electronAPI.log(text);
+        }
+      } catch(e) {}
+    };
+
+    window.onunhandledrejection = function(e) {
+      try {
+        const text = '[index.html unhandledrejection] ' + (e.reason || e);
+        if (window.electronAPI && window.electronAPI.log) {
+          window.electronAPI.log(text);
+        }
+      } catch(e) {}
+    };
+
+    // electronAPI 존재 여부 확인 (preload.js 로드 체크)
+    document.addEventListener('DOMContentLoaded', function() {
+      if (!window.electronAPI) {
+        // electronAPI가 없으면 preload.js 미로드 상태
+        // 파일에 직접 기록 시도 (electronAPI 없이)
+        console.error('[index.html] window.electronAPI 없음 - preload.js 로드 실패');
+      } else if (!window.electronAPI.log) {
+        console.error('[index.html] electronAPI.log 없음 - preload.js 구버전');
+      } else {
+        window.electronAPI.log('[index.html] DOMContentLoaded - electronAPI 정상 확인');
+      }
+    });
+  </script>
+
   <script src="renderer.js"></script>
 </body>
 </html>
