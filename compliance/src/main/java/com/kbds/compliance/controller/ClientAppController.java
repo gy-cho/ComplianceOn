@@ -202,6 +202,7 @@ public class ClientAppController {
             return ResponseEntity.ok(results);
 
         } catch (Exception e) {
+            e.printStackTrace();
             throw e;
             //return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
         }
