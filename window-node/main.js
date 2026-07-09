@@ -1,36 +1,47 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const fs   = require('fs');
+
+// =========================================================================
+// 디버그 로그 (문제 발생 시 원인 파악용)
+// 로그 파일 위치: C:\Users\사용자명\AppData\Roaming\kb-compliance-app\debug.log
+// =========================================================================
+const logFile = path.join(app.getPath('userData'), 'debug.log');
+function log(msg) {
+  const line = `[${new Date().toISOString()}] ${msg}\n`;
+  try { fs.appendFileSync(logFile, line); } catch(e) {}
+  console.log(msg);
+}
 
 // Windows 레지스트리에서 AuthID 읽기
 function getAuthIdFromRegistry() {
-  // Windows 전용: regedit 방식으로 레지스트리 읽기
-  // winreg 패키지 없이 child_process로 처리
   const { execSync } = require('child_process');
   const keyPath = 'HKLM\\SOFTWARE\\Geni\\Genian';
 
-  try {
-    // 64비트 뷰로 레지스트리 쿼리
-    const result = execSync(
-      `reg query "${keyPath}" /v AuthID /reg:64`,
-      { encoding: 'utf8', timeout: 3000 }
-    );
-    // 결과 파싱: "    AuthID    REG_SZ    값"
-    const match = result.match(/AuthID\s+REG_SZ\s+(.+)/);
-    if (match) {
-      return match[1].trim();
+  // 64비트 먼저 시도, 실패 시 32비트 시도
+  for (const reg of ['/reg:64', '/reg:32']) {
+    try {
+      const result = execSync(
+        `reg query "${keyPath}" /v AuthID ${reg}`,
+        { encoding: 'utf8', timeout: 3000 }
+      );
+      const match = result.match(/AuthID\s+REG_SZ\s+(.+)/);
+      if (match) {
+        log(`레지스트리 읽기 성공 (${reg}): ${match[1].trim()}`);
+        return match[1].trim();
+      }
+    } catch (e) {
+      log(`레지스트리 읽기 실패 (${reg}): ${e.message}`);
     }
-    return null;
-  } catch (e) {
-    console.error('레지스트리 읽기 실패:', e.message);
-    return null;
   }
+  return null;
 }
 
 let mainWindow = null;
 
 async function createWindow(empNo) {
+  log('createWindow 시작');
   mainWindow = new BrowserWindow({
-    // 처음엔 숨겨두고 데이터 로드 후 표시 (Python의 root.withdraw()와 동일)
     show: false,
     fullscreen: true,
     alwaysOnTop: true,
@@ -42,43 +53,63 @@ async function createWindow(empNo) {
     },
   });
 
-  // 다이얼로그 표시 시 fullscreen 해제 및 하단 바 노출 방지
   mainWindow.setAlwaysOnTop(true, 'screen-saver');
   mainWindow.setFullScreenable(false);
 
   await mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  log('index.html 로드 완료');
 
-  // 렌더러에 사번 전달 후 데이터 조회 지시
+  // renderer 프로세스 오류 감지
+  mainWindow.webContents.on('did-fail-load', (e, code, desc) => {
+    log(`[main] did-fail-load: ${code} ${desc}`);
+  });
+  mainWindow.webContents.on('render-process-gone', (e, details) => {
+    log(`[main] render-process-gone: ${JSON.stringify(details)}`);
+  });
+  mainWindow.webContents.on('preload-error', (e, preloadPath, error) => {
+    log(`[main] preload-error: ${preloadPath} - ${error}`);
+  });
+  mainWindow.webContents.on('console-message', (e, level, message) => {
+    log(`[renderer console] ${message}`);
+  });
+
   mainWindow.webContents.send('init', { empNo });
+  log(`init 전송 완료 (empNo: ${empNo})`);
 }
 
 app.whenReady().then(async () => {
-  // 1. 사번 가져오기
+  log('=== 앱 시작 ===');
+  log(`userData 경로: ${app.getPath('userData')}`);
+
   const authId = getAuthIdFromRegistry();
   if (!authId) {
-    console.error('사번 가져오기 실패! 프로그램을 종료합니다.');
+    log('사번 가져오기 실패 → 앱 종료');
     app.exit(0);
     return;
   }
 
-  // 2. 창 생성 (숨김 상태)
+  log(`사번 확인 완료: ${authId}`);
   await createWindow(authId);
 });
 
 // =========================================================================
-// IPC 핸들러 - 렌더러 프로세스와 통신
+// IPC 핸들러
 // =========================================================================
-
-// 창 표시 (데이터 조회 성공 후 렌더러가 요청)
 ipcMain.on('show-window', () => {
+  log('show-window 수신');
   if (mainWindow) {
     mainWindow.show();
     mainWindow.focus();
   }
 });
 
-// 프로그램 강제 종료
+// renderer에서 보내는 로그를 파일에 기록
+ipcMain.on('log', (_e, msg) => {
+  log(msg);
+});
+
 ipcMain.on('terminate', () => {
+  log('terminate 수신 → 앱 종료');
   app.exit(0);
 });
 
